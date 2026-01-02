@@ -225,34 +225,47 @@ class SessionManager:
     def start_session_services(self, session: Session, url: str = None) -> bool:
         """Start VNC, Chrome, Agent, and Websockify for session"""
         try:
-            # 1. Start VNC server
-            vnc_cmd = [
-                'vncserver',
-                f':{session.vnc_display}',
-                '-geometry', '1280x720',
-                '-depth', '24'
-            ]
-            
-            # Kill existing VNC on this display first
+            # 1. Kill existing VNC on this display first
             subprocess.run(['vncserver', '-kill', f':{session.vnc_display}'], 
                          capture_output=True)
             time.sleep(1)
             
-            vnc_process = subprocess.Popen(
+            # Start VNC server
+            vnc_cmd = [
+                'vncserver',
+                f':{session.vnc_display}',
+                '-geometry', '1280x720',
+                '-depth', '24',
+                '-localhost', 'no'
+            ]
+            
+            self.logger.info(f"Starting VNC: {' '.join(vnc_cmd)}")
+            
+            vnc_result = subprocess.run(
                 vnc_cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                capture_output=True,
+                text=True,
+                timeout=30
             )
+            
+            if vnc_result.returncode != 0:
+                self.logger.error(f"VNC failed: {vnc_result.stderr}")
+                return False
+            
             time.sleep(2)
             
-            # Get VNC PID
+            # Verify VNC is running
             result = subprocess.run(
                 ['pgrep', '-f', f'Xtigervnc :{session.vnc_display}'],
                 capture_output=True,
                 text=True
             )
-            if result.stdout.strip():
-                session.pid_vnc = int(result.stdout.strip().split()[0])
+            if not result.stdout.strip():
+                self.logger.error("VNC server not running after start")
+                return False
+            
+            session.pid_vnc = int(result.stdout.strip().split()[0])
+            self.logger.info(f"VNC started on display :{session.vnc_display} (PID: {session.pid_vnc})")
             
             # 2. Start Websockify for this session
             websockify_cmd = [
@@ -262,6 +275,8 @@ class SessionManager:
                 f'localhost:{session.vnc_port}'
             ]
             
+            self.logger.info(f"Starting Websockify: {' '.join(websockify_cmd)}")
+            
             websockify_process = subprocess.Popen(
                 websockify_cmd,
                 stdout=subprocess.DEVNULL,
@@ -269,6 +284,8 @@ class SessionManager:
             )
             session.pid_websockify = websockify_process.pid
             time.sleep(1)
+            
+            self.logger.info(f"Websockify started on port {session.novnc_port} (PID: {session.pid_websockify})")
             
             # 3. Start Chrome with profile
             chrome_profile_dir = CHROME_PROFILES_DIR / session.chrome_profile
@@ -294,6 +311,8 @@ class SessionManager:
             if url:
                 chrome_cmd.append(url)
             
+            self.logger.info(f"Starting Chrome on display :{session.vnc_display}")
+            
             chrome_process = subprocess.Popen(
                 chrome_cmd,
                 env=env,
@@ -302,6 +321,8 @@ class SessionManager:
             )
             session.pid_chrome = chrome_process.pid
             time.sleep(2)
+            
+            self.logger.info(f"Chrome started (PID: {session.pid_chrome})")
             
             # 4. Start Keyboard Agent for this session
             agent_script = Path(__file__).parent / 'agent.py'
@@ -314,6 +335,8 @@ class SessionManager:
                 '--display', f':{session.vnc_display}'
             ]
             
+            self.logger.info(f"Starting Agent on port {session.agent_port}")
+            
             agent_process = subprocess.Popen(
                 agent_cmd,
                 env=agent_env,
@@ -322,9 +345,15 @@ class SessionManager:
             )
             session.pid_agent = agent_process.pid
             
-            self.logger.info(f"Started services for session {session.session_id}")
+            self.logger.info(f"Agent started (PID: {session.pid_agent})")
+            self.logger.info(f"Session {session.session_id} fully started")
+            
             return True
             
+        except subprocess.TimeoutExpired:
+            self.logger.error("VNC server start timed out")
+            self.stop_session_services(session)
+            return False
         except Exception as e:
             self.logger.error(f"Failed to start session services: {e}")
             self.stop_session_services(session)
