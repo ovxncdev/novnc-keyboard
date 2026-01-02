@@ -1,0 +1,36 @@
+# noVNC Keyboard Agent Configuration
+# -----------------------------------
+# Location: ~/.config/novnc-keyboard/config.yaml
+
+server:
+  host: "0.0.0.0"
+  port: 6082
+
+detection:
+  poll_interval: 100  # milliseconds (100 = responsive)
+  method: "accessibility"  # uses at-spi2 for text field detection
+
+apps:
+  chrome:
+    enabled: true
+    process_name: "google-chrome"
+    window_class: "Google-chrome"
+  firefox:
+    enabled: false
+    process_name: "firefox"
+    window_class: "Firefox"
+  terminal:
+    enabled: false
+    process_name: "gnome-terminal"
+    window_class: "Gnome-terminal"
+
+keyboard:
+  layout: "qwerty_us"
+  position: "bottom"
+  sound: true
+  key_preview: true
+  theme: "auto"  # auto = detect from phone browser
+
+logging:
+  level: "info"  # debug, info, warning, error
+  file: "~/.config/novnc-keyboard/agent.log"
