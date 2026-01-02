@@ -286,6 +286,16 @@ def print_banner():
 
 
 def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='noVNC Keyboard Agent')
+    parser.add_argument('--port', type=int, default=6082, help='WebSocket port')
+    parser.add_argument('--display', type=str, default=':1.0', help='X display')
+    args = parser.parse_args()
+    
+    # Set display
+    os.environ['DISPLAY'] = args.display
+    
     print_banner()
     
     # Check dependencies
@@ -305,8 +315,9 @@ def main():
         print("⚠️  DISPLAY not set. Setting to :1.0")
         os.environ['DISPLAY'] = ':1.0'
     
-    # Create agent
+    # Create agent with custom port
     agent = KeyboardAgent()
+    agent.port = args.port  # Override port
     
     # Handle shutdown
     def shutdown(sig, frame):
