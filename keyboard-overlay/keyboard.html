@@ -53,10 +53,12 @@
             transition: transform 0.3s ease;
             z-index: 9999;
             --keyboard-height: 260px;
+            visibility: hidden;
         }
 
         #keyboard-container.visible {
             transform: translateY(0);
+            visibility: visible;
         }
 
         /* Light Theme (default) */
@@ -969,14 +971,38 @@
                 // Set initial theme
                 this.keyboard.setTheme(this.device.theme);
 
-                // Click on VNC container hides keyboard
-                document.getElementById('vnc-container').addEventListener('click', () => {
-                    this.keyboard.hide();
+                // Keyboard starts hidden
+                this.keyboard.visible = false;
+
+                // Click/tap on VNC container hides keyboard
+                const vncContainer = document.getElementById('vnc-container');
+                const iframe = document.getElementById('vnc-iframe');
+                
+                // Handle clicks on the container
+                vncContainer.addEventListener('click', (e) => {
+                    if (this.keyboard.visible) {
+                        this.keyboard.hide();
+                    }
                 });
 
-                // Also handle touch
-                document.getElementById('vnc-container').addEventListener('touchstart', () => {
-                    // Don't hide immediately, let the agent decide based on focus
+                // Handle clicks inside iframe (when iframe loads)
+                iframe.addEventListener('load', () => {
+                    try {
+                        iframe.contentDocument.addEventListener('click', () => {
+                            // Let agent decide via focus detection
+                        });
+                    } catch(e) {
+                        // Cross-origin, can't access iframe content
+                        console.log('Cannot access iframe content');
+                    }
+                });
+
+                // Touch events for mobile
+                vncContainer.addEventListener('touchend', (e) => {
+                    // Small delay to let agent focus detection run first
+                    setTimeout(() => {
+                        // Agent will send show/hide based on focus
+                    }, 150);
                 }, { passive: true });
 
                 // Listen for theme changes
