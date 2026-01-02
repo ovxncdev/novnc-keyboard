@@ -150,6 +150,18 @@ class KeyboardAgent:
                     # Handle device info from client
                     elif data.get('type') == 'device':
                         self.logger.info(f"Client device: {data.get('device')}")
+                    
+                    # Handle key press from keyboard
+                    elif data.get('type') == 'key':
+                        key = data.get('key')
+                        if key:
+                            self.type_key(key)
+                    
+                    # Handle special key press
+                    elif data.get('type') == 'special':
+                        key = data.get('key')
+                        if key:
+                            self.type_special(key)
                         
                 except json.JSONDecodeError:
                     self.logger.warning(f"Invalid JSON received: {message}")
@@ -218,6 +230,48 @@ class KeyboardAgent:
         """Stop the agent"""
         self.running = False
         self.logger.info("Agent stopping...")
+    
+    def type_key(self, char):
+        """Type a character using xdotool"""
+        try:
+            import subprocess
+            # Use xdotool to type the character
+            subprocess.run(
+                ['xdotool', 'type', '--clearmodifiers', '--', char],
+                check=False,
+                timeout=1
+            )
+            self.logger.debug(f"Typed: {char}")
+        except Exception as e:
+            self.logger.error(f"Error typing key: {e}")
+    
+    def type_special(self, key):
+        """Type a special key using xdotool"""
+        try:
+            import subprocess
+            # Map special keys to xdotool key names
+            key_map = {
+                'BackSpace': 'BackSpace',
+                'Return': 'Return',
+                'space': 'space',
+                'Tab': 'Tab',
+                'Escape': 'Escape',
+                'Delete': 'Delete',
+                'Left': 'Left',
+                'Right': 'Right',
+                'Up': 'Up',
+                'Down': 'Down'
+            }
+            
+            xdo_key = key_map.get(key, key)
+            subprocess.run(
+                ['xdotool', 'key', '--clearmodifiers', xdo_key],
+                check=False,
+                timeout=1
+            )
+            self.logger.debug(f"Typed special: {xdo_key}")
+        except Exception as e:
+            self.logger.error(f"Error typing special key: {e}")
 
 
 def print_banner():
