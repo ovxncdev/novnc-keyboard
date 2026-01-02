@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>noVNC Keyboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+        }
+
+        /* VNC Container */
+        #vnc-container {
+            width: 100%;
+            height: 100%;
+            transition: height 0.3s ease;
+        }
+
+        #vnc-container.keyboard-open {
+            height: calc(100% - var(--keyboard-height));
+        }
+
+        #vnc-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Keyboard Container */
+        #keyboard-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 9999;
+            --keyboard-height: 260px;
+        }
+
+        #keyboard-container.visible {
+            transform: translateY(0);
+        }
+
+        /* Light Theme (default) */
+        :root {
+            --kb-bg: #D1D3D9;
+            --key-bg: #FFFFFF;
+            --key-bg-active: #B8B8B8;
+            --key-color: #000000;
+            --key-shadow: 0 1px 0 rgba(0,0,0,0.35);
+            --special-bg: #A5A5A5;
+            --special-bg-active: #8A8A8A;
+            --return-bg: #007AFF;
+            --return-bg-active: #0056B3;
+            --popup-bg: #FFFFFF;
+            --popup-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Dark Theme */
+        .dark-theme {
+            --kb-bg: #2C2C2E;
+            --key-bg: #4A4A4C;
+            --key-bg-active: #6A6A6C;
+            --key-color: #FFFFFF;
+            --key-shadow: 0 1px 0 rgba(0,0,0,0.5);
+            --special-bg: #3A3A3C;
+            --special-bg-active: #5A5A5C;
+            --return-bg: #0A84FF;
+            --return-bg-active: #0056B3;
+            --popup-bg: #5A5A5C;
+            --popup-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        /* Keyboard Layout */
+        .keyboard {
+            background: var(--kb-bg);
+            padding: 8px 3px;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .keyboard-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Keys */
+        .key {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--key-bg);
+            color: var(--key-color);
+            border: none;
+            border-radius: 8px;
+            margin: 0 3px;
+            font-size: 22px;
+            font-weight: 400;
+            box-shadow: var(--key-shadow);
+            cursor: pointer;
+            position: relative;
+            transition: background 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .key:active, .key.active {
+            background: var(--key-bg-active);
+        }
+
+        .key-letter {
+            width: calc((100% - 60px) / 10);
+            max-width: 36px;
+            height: 46px;
+        }
+
+        .key-letter.row-middle {
+            width: calc((100% - 54px) / 9);
+            max-width: 38px;
+        }
+
+        .key-letter.row-bottom {
+            width: calc((100% - 120px) / 7);
+            max-width: 38px;
+        }
+
+        /* Special Keys */
+        .key-special {
+            background: var(--special-bg);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .key-special:active, .key-special.active {
+            background: var(--special-bg-active);
+        }
+
+        .key-shift {
+            width: 46px;
+            height: 46px;
+        }
+
+        .key-backspace {
+            width: 46px;
+            height: 46px;
+        }
+
+        .key-numbers {
+            width: 46px;
+            height: 46px;
+            font-size: 16px;
+        }
+
+        .key-globe {
+            width: 42px;
+            height: 46px;
+            font-size: 18px;
+        }
+
+        .key-space {
+            flex: 1;
+            max-width: none;
+            height: 46px;
+            margin: 0 4px;
+            font-size: 16px;
+        }
+
+        .key-return {
+            background: var(--return-bg);
+            color: #FFFFFF;
+            width: 88px;
+            height: 46px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .key-return:active {
+            background: var(--return-bg-active);
+        }
+
+        /* Shift active state */
+        .key-shift.shift-active {
+            background: var(--key-bg);
+        }
+
+        .key-shift.caps-active {
+            background: var(--key-bg);
+        }
+
+        .key-shift.caps-active::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            width: 5px;
+            height: 5px;
+            background: var(--key-color);
+            border-radius: 50%;
+        }
+
+        /* Key Preview Popup */
+        .key-preview {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--popup-bg);
+            color: var(--key-color);
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 400;
+            box-shadow: var(--popup-shadow);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.05s;
+            margin-bottom: 8px;
+            z-index: 100;
+        }
+
+        .key-preview.visible {
+            opacity: 1;
+        }
+
+        /* Number/Symbol keyboard */
+        .key-number {
+            width: calc((100% - 60px) / 10);
+            max-width: 36px;
+            height: 46px;
+        }
+
+        .key-symbol {
+            width: calc((100% - 54px) / 9);
+            max-width: 40px;
+            height: 46px;
+        }
+
+        .key-symbol-toggle {
+            width: 50px;
+            height: 46px;
+        }
+
+        /* Landscape adjustments */
+        @media (orientation: landscape) {
+            #keyboard-container {
+                --keyboard-height: 200px;
+            }
+
+            .keyboard {
+                padding: 5px 3px;
+                padding-bottom: max(5px, env(safe-area-inset-bottom));
+            }
+
+            .keyboard-row {
+                margin-bottom: 5px;
+            }
+
+            .key {
+                height: 38px !important;
+                font-size: 18px;
+            }
+
+            .key-special {
+                font-size: 13px;
+            }
+
+            .key-preview {
+                width: 48px;
+                height: 48px;
+                font-size: 26px;
+            }
+        }
+
+        /* Small phones */
+        @media (max-width: 350px) {
+            .key {
+                margin: 0 2px;
+                border-radius: 6px;
+            }
+
+            .key-letter {
+                font-size: 20px;
+            }
+        }
+
+        /* Device info bar (debug - hidden by default) */
+        #device-info {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 5px 10px;
+            font-size: 10px;
+            z-index: 10000;
+        }
+
+        #device-info.visible {
+            display: block;
+        }
+
+        /* Connection status */
+        #connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 10001;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #connection-status.visible {
+            opacity: 1;
+        }
+
+        #connection-status.connected {
+            background: rgba(52, 199, 89, 0.9);
+            color: white;
+        }
+
+        #connection-status.disconnected {
+            background: rgba(255, 59, 48, 0.9);
+            color: white;
+        }
+
+        #connection-status.connecting {
+            background: rgba(255, 149, 0, 0.9);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Device Info (debug) -->
+    <div id="device-info"></div>
+
+    <!-- Connection Status -->
+    <div id="connection-status">Connecting...</div>
+
+    <!-- VNC Container -->
+    <div id="vnc-container">
+        <iframe id="vnc-iframe" src="vnc.html"></iframe>
+    </div>
+
+    <!-- Keyboard Container -->
+    <div id="keyboard-container">
+        <div class="keyboard" id="keyboard">
+            <!-- Keyboard rows will be generated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Click Sound (base64 encoded) -->
+    <audio id="key-sound" preload="auto">
+        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV////////////////////////////////////////////AAAAAExhdmM1OC4xMwAAAAAAAAAAAAAAACQDgAAAAAAAAAGw2E5PDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxDsAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxHYAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mp3">
+    </audio>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const CONFIG = {
+            wsUrl: `ws://${window.location.hostname}:6082`,
+            sound: true,
+            keyPreview: true,
+            reconnectInterval: 3000,
+            debug: false
+        };
+
+        // ============================================
+        // DEVICE DETECTION
+        // ============================================
+        const DeviceDetector = {
+            info: null,
+
+            detect() {
+                const ua = navigator.userAgent;
+                const platform = navigator.platform;
+                
+                let device = {
+                    type: 'unknown',
+                    brand: 'unknown',
+                    model: 'unknown',
+                    os: 'unknown',
+                    osVersion: 'unknown',
+                    browser: 'unknown',
+                    isTouch: 'ontouchstart' in window,
+                    screenWidth: window.screen.width,
+                    screenHeight: window.screen.height,
+                    pixelRatio: window.devicePixelRatio || 1,
+                    orientation: this.getOrientation(),
+                    theme: this.getTheme()
+                };
+
+                // Detect OS
+                if (/iPhone|iPad|iPod/.test(ua)) {
+                    device.os = 'iOS';
+                    device.brand = 'Apple';
+                    const match = ua.match(/OS (\d+)_(\d+)/);
+                    if (match) device.osVersion = `${match[1]}.${match[2]}`;
+                    
+                    if (/iPhone/.test(ua)) {
+                        device.type = 'phone';
+                        device.model = 'iPhone';
+                    } else if (/iPad/.test(ua)) {
+                        device.type = 'tablet';
+                        device.model = 'iPad';
+                    }
+                } else if (/Android/.test(ua)) {
+                    device.os = 'Android';
+                    const match = ua.match(/Android (\d+\.?\d*)/);
+                    if (match) device.osVersion = match[1];
+                    
+                    // Detect brand
+                    if (/Samsung/i.test(ua)) {
+                        device.brand = 'Samsung';
+                    } else if (/Pixel/i.test(ua)) {
+                        device.brand = 'Google';
+                        device.model = 'Pixel';
+                    } else if (/Huawei/i.test(ua)) {
+                        device.brand = 'Huawei';
+                    } else if (/Xiaomi|Redmi|POCO/i.test(ua)) {
+                        device.brand = 'Xiaomi';
+                    } else if (/OnePlus/i.test(ua)) {
+                        device.brand = 'OnePlus';
+                    } else if (/OPPO/i.test(ua)) {
+                        device.brand = 'OPPO';
+                    } else if (/vivo/i.test(ua)) {
+                        device.brand = 'Vivo';
+                    }
+                    
+                    device.type = device.screenWidth < 600 ? 'phone' : 'tablet';
+                } else if (/Windows/.test(ua)) {
+                    device.os = 'Windows';
+                    device.type = 'desktop';
+                } else if (/Mac/.test(platform)) {
+                    device.os = 'macOS';
+                    device.type = 'desktop';
+                } else if (/Linux/.test(platform)) {
+                    device.os = 'Linux';
+                    device.type = 'desktop';
+                }
+
+                // Detect browser
+                if (/Chrome/.test(ua) && !/Chromium|Edge/.test(ua)) {
+                    device.browser = 'Chrome';
+                } else if (/Safari/.test(ua) && !/Chrome/.test(ua)) {
+                    device.browser = 'Safari';
+                } else if (/Firefox/.test(ua)) {
+                    device.browser = 'Firefox';
+                } else if (/Edge/.test(ua)) {
+                    device.browser = 'Edge';
+                }
+
+                this.info = device;
+                return device;
+            },
+
+            getOrientation() {
+                if (window.screen.orientation) {
+                    return window.screen.orientation.type.includes('portrait') ? 'portrait' : 'landscape';
+                }
+                return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+            },
+
+            getTheme() {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    return 'dark';
+                }
+                return 'light';
+            },
+
+            onOrientationChange(callback) {
+                window.addEventListener('resize', () => {
+                    const newOrientation = this.getOrientation();
+                    if (this.info && this.info.orientation !== newOrientation) {
+                        this.info.orientation = newOrientation;
+                        callback(newOrientation);
+                    }
+                });
+            },
+
+            onThemeChange(callback) {
+                if (window.matchMedia) {
+                    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                        const newTheme = e.matches ? 'dark' : 'light';
+                        if (this.info) this.info.theme = newTheme;
+                        callback(newTheme);
+                    });
+                }
+            }
+        };
+
+        // ============================================
+        // WEBSOCKET CONNECTION
+        // ============================================
+        class WebSocketClient {
+            constructor(url) {
+                this.url = url;
+                this.ws = null;
+                this.reconnectTimer = null;
+                this.onMessage = null;
+                this.onStatusChange = null;
+            }
+
+            connect() {
+                this.updateStatus('connecting');
+                
+                try {
+                    this.ws = new WebSocket(this.url);
+                    
+                    this.ws.onopen = () => {
+                        console.log('WebSocket connected');
+                        this.updateStatus('connected');
+                        
+                        // Send device info
+                        this.send({
+                            type: 'device',
+                            device: DeviceDetector.info
+                        });
+                        
+                        // Send theme info
+                        this.send({
+                            type: 'theme',
+                            theme: DeviceDetector.info.theme
+                        });
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (this.onMessage) this.onMessage(data);
+                        } catch (e) {
+                            console.error('Invalid message:', e);
+                        }
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('WebSocket disconnected');
+                        this.updateStatus('disconnected');
+                        this.scheduleReconnect();
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.updateStatus('disconnected');
+                    };
+                } catch (e) {
+                    console.error('WebSocket connection failed:', e);
+                    this.updateStatus('disconnected');
+                    this.scheduleReconnect();
+                }
+            }
+
+            send(data) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(data));
+                }
+            }
+
+            scheduleReconnect() {
+                if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+                this.reconnectTimer = setTimeout(() => {
+                    console.log('Attempting reconnect...');
+                    this.connect();
+                }, CONFIG.reconnectInterval);
+            }
+
+            updateStatus(status) {
+                if (this.onStatusChange) this.onStatusChange(status);
+            }
+        }
+
+        // ============================================
+        // KEYBOARD
+        // ============================================
+        class iPhoneKeyboard {
+            constructor() {
+                this.container = document.getElementById('keyboard-container');
+                this.keyboard = document.getElementById('keyboard');
+                this.vncContainer = document.getElementById('vnc-container');
+                this.sound = document.getElementById('key-sound');
+                
+                this.shift = false;
+                this.caps = false;
+                this.numbersMode = false;
+                this.symbolsMode = false;
+                this.visible = false;
+                this.activeKey = null;
+                this.previewTimeout = null;
+                
+                this.layouts = this.getLayouts();
+                this.render();
+                this.bindEvents();
+            }
+
+            getLayouts() {
+                return {
+                    letters: [
+                        ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+                        ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+                        ['shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'backspace'],
+                        ['123', 'globe', 'space', 'return']
+                    ],
+                    numbers: [
+                        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+                        ['-', '/', ':', ';', '(', ')', '$', '&', '@', '"'],
+                        ['#+=', '.', ',', '?', '!', "'", 'backspace'],
+                        ['ABC', 'globe', 'space', 'return']
+                    ],
+                    symbols: [
+                        ['[', ']', '{', '}', '#', '%', '^', '*', '+', '='],
+                        ['_', '\\', '|', '~', '<', '>', '€', '£', '¥', '•'],
+                        ['123', '.', ',', '?', '!', "'", 'backspace'],
+                        ['ABC', 'globe', 'space', 'return']
+                    ]
+                };
+            }
+
+            render() {
+                let layout;
+                if (this.symbolsMode) {
+                    layout = this.layouts.symbols;
+                } else if (this.numbersMode) {
+                    layout = this.layouts.numbers;
+                } else {
+                    layout = this.layouts.letters;
+                }
+
+                let html = '';
+                
+                layout.forEach((row, rowIndex) => {
+                    html += '<div class="keyboard-row">';
+                    
+                    row.forEach(key => {
+                        html += this.renderKey(key, rowIndex);
+                    });
+                    
+                    html += '</div>';
+                });
+
+                this.keyboard.innerHTML = html;
+            }
+
+            renderKey(key, rowIndex) {
+                let displayKey = key;
+                let keyClass = 'key';
+                let extraAttr = '';
+
+                // Apply shift/caps
+                if (key.length === 1 && /[a-z]/.test(key) && (this.shift || this.caps)) {
+                    displayKey = key.toUpperCase();
+                }
+
+                // Special keys
+                switch (key) {
+                    case 'shift':
+                        keyClass += ' key-special key-shift';
+                        if (this.caps) keyClass += ' caps-active';
+                        else if (this.shift) keyClass += ' shift-active';
+                        displayKey = this.getShiftIcon();
+                        break;
+                    case 'backspace':
+                        keyClass += ' key-special key-backspace';
+                        displayKey = '⌫';
+                        break;
+                    case '123':
+                        keyClass += ' key-special key-numbers';
+                        displayKey = '123';
+                        break;
+                    case 'ABC':
+                        keyClass += ' key-special key-numbers';
+                        displayKey = 'ABC';
+                        break;
+                    case '#+=':
+                        keyClass += ' key-special key-symbol-toggle';
+                        displayKey = '#+=';
+                        break;
+                    case 'globe':
+                        keyClass += ' key-special key-globe';
+                        displayKey = '🌐';
+                        break;
+                    case 'space':
+                        keyClass += ' key-space';
+                        displayKey = 'space';
+                        break;
+                    case 'return':
+                        keyClass += ' key-return';
+                        displayKey = 'return';
+                        break;
+                    default:
+                        // Letter/number/symbol keys
+                        if (!this.numbersMode && !this.symbolsMode) {
+                            if (rowIndex === 0) keyClass += ' key-letter';
+                            else if (rowIndex === 1) keyClass += ' key-letter row-middle';
+                            else if (rowIndex === 2 && key.length === 1) keyClass += ' key-letter row-bottom';
+                        } else {
+                            if (rowIndex === 0) keyClass += ' key-number';
+                            else if (rowIndex === 1) keyClass += ' key-symbol';
+                            else if (rowIndex === 2 && key.length === 1) keyClass += ' key-symbol';
+                        }
+                }
+
+                return `<button class="${keyClass}" data-key="${key}">
+                    ${displayKey}
+                    ${CONFIG.keyPreview && key.length === 1 ? '<div class="key-preview"></div>' : ''}
+                </button>`;
+            }
+
+            getShiftIcon() {
+                if (this.caps) {
+                    return '⇪';
+                } else if (this.shift) {
+                    return '⇧';
+                }
+                return '⇧';
+            }
+
+            bindEvents() {
+                // Use pointer events for better touch/mouse handling
+                this.keyboard.addEventListener('pointerdown', (e) => this.onKeyDown(e));
+                this.keyboard.addEventListener('pointerup', (e) => this.onKeyUp(e));
+                this.keyboard.addEventListener('pointerleave', (e) => this.onKeyCancel(e));
+                this.keyboard.addEventListener('pointercancel', (e) => this.onKeyCancel(e));
+
+                // Prevent context menu on long press
+                this.keyboard.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            onKeyDown(e) {
+                const key = e.target.closest('.key');
+                if (!key) return;
+
+                e.preventDefault();
+                
+                this.activeKey = key;
+                key.classList.add('active');
+
+                // Show preview for letter/number keys
+                const keyValue = key.dataset.key;
+                if (CONFIG.keyPreview && keyValue.length === 1) {
+                    const preview = key.querySelector('.key-preview');
+                    if (preview) {
+                        let displayChar = keyValue;
+                        if (/[a-z]/.test(keyValue) && (this.shift || this.caps)) {
+                            displayChar = keyValue.toUpperCase();
+                        }
+                        preview.textContent = displayChar;
+                        preview.classList.add('visible');
+                    }
+                }
+            }
+
+            onKeyUp(e) {
+                const key = e.target.closest('.key');
+                if (!key || key !== this.activeKey) return;
+
+                e.preventDefault();
+
+                // Hide preview
+                const preview = key.querySelector('.key-preview');
+                if (preview) {
+                    preview.classList.remove('visible');
+                }
+
+                key.classList.remove('active');
+                
+                // Process key
+                this.processKey(key.dataset.key);
+                
+                this.activeKey = null;
+            }
+
+            onKeyCancel(e) {
+                if (this.activeKey) {
+                    this.activeKey.classList.remove('active');
+                    const preview = this.activeKey.querySelector('.key-preview');
+                    if (preview) preview.classList.remove('visible');
+                    this.activeKey = null;
+                }
+            }
+
+            processKey(key) {
+                // Play sound
+                if (CONFIG.sound && this.sound) {
+                    this.sound.currentTime = 0;
+                    this.sound.play().catch(() => {});
+                }
+
+                switch (key) {
+                    case 'shift':
+                        if (this.shift) {
+                            // Double tap = caps lock
+                            this.caps = !this.caps;
+                            this.shift = false;
+                        } else {
+                            this.shift = true;
+                        }
+                        this.render();
+                        break;
+
+                    case 'backspace':
+                        this.sendKey('BackSpace');
+                        break;
+
+                    case '123':
+                        this.numbersMode = true;
+                        this.symbolsMode = false;
+                        this.render();
+                        break;
+
+                    case 'ABC':
+                        this.numbersMode = false;
+                        this.symbolsMode = false;
+                        this.render();
+                        break;
+
+                    case '#+=':
+                        this.symbolsMode = true;
+                        this.render();
+                        break;
+
+                    case 'globe':
+                        // Future: language switch
+                        break;
+
+                    case 'space':
+                        this.sendKey('space');
+                        break;
+
+                    case 'return':
+                        this.sendKey('Return');
+                        break;
+
+                    default:
+                        // Regular character
+                        let char = key;
+                        if (/[a-z]/.test(key) && (this.shift || this.caps)) {
+                            char = key.toUpperCase();
+                        }
+                        this.sendChar(char);
+                        
+                        // Turn off shift after typing (unless caps)
+                        if (this.shift && !this.caps) {
+                            this.shift = false;
+                            this.render();
+                        }
+                }
+            }
+
+            sendKey(key) {
+                // Send to noVNC iframe
+                const iframe = document.getElementById('vnc-iframe');
+                if (iframe && iframe.contentWindow && iframe.contentWindow.rfb) {
+                    const rfb = iframe.contentWindow.rfb;
+                    const keysym = this.getKeysym(key);
+                    if (keysym) {
+                        rfb.sendKey(keysym, key, true);  // key down
+                        rfb.sendKey(keysym, key, false); // key up
+                    }
+                }
+            }
+
+            sendChar(char) {
+                const iframe = document.getElementById('vnc-iframe');
+                if (iframe && iframe.contentWindow && iframe.contentWindow.rfb) {
+                    const rfb = iframe.contentWindow.rfb;
+                    const keysym = char.charCodeAt(0);
+                    rfb.sendKey(keysym, char, true);
+                    rfb.sendKey(keysym, char, false);
+                }
+            }
+
+            getKeysym(key) {
+                const keymap = {
+                    'BackSpace': 0xFF08,
+                    'Tab': 0xFF09,
+                    'Return': 0xFF0D,
+                    'Escape': 0xFF1B,
+                    'space': 0x0020,
+                    'Delete': 0xFFFF,
+                    'Left': 0xFF51,
+                    'Up': 0xFF52,
+                    'Right': 0xFF53,
+                    'Down': 0xFF54
+                };
+                return keymap[key] || null;
+            }
+
+            show() {
+                if (this.visible) return;
+                this.visible = true;
+                this.container.classList.add('visible');
+                this.vncContainer.classList.add('keyboard-open');
+                
+                // Set CSS variable for keyboard height
+                const height = this.container.offsetHeight;
+                document.documentElement.style.setProperty('--keyboard-height', `${height}px`);
+            }
+
+            hide() {
+                if (!this.visible) return;
+                this.visible = false;
+                this.container.classList.remove('visible');
+                this.vncContainer.classList.remove('keyboard-open');
+            }
+
+            toggle() {
+                if (this.visible) {
+                    this.hide();
+                } else {
+                    this.show();
+                }
+            }
+
+            setTheme(theme) {
+                if (theme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                }
+            }
+        }
+
+        // ============================================
+        // MAIN APP
+        // ============================================
+        class App {
+            constructor() {
+                this.device = DeviceDetector.detect();
+                this.keyboard = new iPhoneKeyboard();
+                this.ws = new WebSocketClient(CONFIG.wsUrl);
+                
+                this.init();
+            }
+
+            init() {
+                // Debug info
+                if (CONFIG.debug) {
+                    const info = document.getElementById('device-info');
+                    info.classList.add('visible');
+                    info.textContent = `${this.device.brand} ${this.device.model} | ${this.device.os} ${this.device.osVersion} | ${this.device.browser} | ${this.device.orientation}`;
+                }
+
+                // Set initial theme
+                this.keyboard.setTheme(this.device.theme);
+
+                // Listen for theme changes
+                DeviceDetector.onThemeChange((theme) => {
+                    this.keyboard.setTheme(theme);
+                    this.ws.send({ type: 'theme', theme });
+                });
+
+                // Listen for orientation changes
+                DeviceDetector.onOrientationChange((orientation) => {
+                    if (CONFIG.debug) {
+                        document.getElementById('device-info').textContent = 
+                            `${this.device.brand} ${this.device.model} | ${this.device.os} ${this.device.osVersion} | ${this.device.browser} | ${orientation}`;
+                    }
+                    
+                    // Re-render keyboard for new orientation
+                    if (this.keyboard.visible) {
+                        setTimeout(() => {
+                            const height = this.keyboard.container.offsetHeight;
+                            document.documentElement.style.setProperty('--keyboard-height', `${height}px`);
+                        }, 100);
+                    }
+                });
+
+                // WebSocket message handler
+                this.ws.onMessage = (data) => {
+                    if (data.action === 'show_keyboard') {
+                        this.keyboard.show();
+                    } else if (data.action === 'hide_keyboard') {
+                        this.keyboard.hide();
+                    }
+                };
+
+                // Connection status handler
+                this.ws.onStatusChange = (status) => {
+                    const el = document.getElementById('connection-status');
+                    el.className = 'visible ' + status;
+                    el.textContent = status === 'connected' ? '● Connected' : 
+                                    status === 'connecting' ? '◌ Connecting...' : '○ Disconnected';
+                    
+                    // Hide status after 3 seconds if connected
+                    if (status === 'connected') {
+                        setTimeout(() => {
+                            el.classList.remove('visible');
+                        }, 3000);
+                    }
+                };
+
+                // Connect to WebSocket
+                this.ws.connect();
+            }
+        }
+
+        // Start app when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new App();
+        });
+    </script>
+</body>
+</html>
