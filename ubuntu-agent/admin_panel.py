@@ -655,6 +655,30 @@ ROUTER_HTML = """
             }
         }
 
+        function getScreenSize() {
+            // Get actual screen dimensions
+            const width = window.screen.width;
+            const height = window.screen.height;
+            const pixelRatio = window.devicePixelRatio || 1;
+            
+            // Use available dimensions (excluding browser chrome)
+            const availWidth = window.screen.availWidth;
+            const availHeight = window.screen.availHeight;
+            
+            // Use innerWidth/Height for actual viewport
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            return {
+                width: viewportWidth,
+                height: viewportHeight,
+                screenWidth: width,
+                screenHeight: height,
+                pixelRatio: pixelRatio,
+                userAgent: navigator.userAgent
+            };
+        }
+
         async function connect() {
             try {
                 // First get the configured URL from server
@@ -666,11 +690,16 @@ ROUTER_HTML = """
                     applyTheme(config.url);
                 }
                 
-                // Now connect
+                // Get device screen size
+                const screenInfo = getScreenSize();
+                
+                // Now connect with screen info
                 const response = await fetch('/api/connect', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({
+                        screen: screenInfo
+                    })
                 });
                 
                 const data = await response.json();
@@ -830,13 +859,35 @@ class AdminHandler(BaseHTTPRequestHandler):
         client_ip = self.get_client_ip()
         
         if path == '/api/connect':
+            # Read request body for screen info
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode() if content_length > 0 else '{}'
+            
+            try:
+                data = json.loads(body)
+            except:
+                data = {}
+            
+            # Get screen info from client
+            screen_info = data.get('screen', {})
+            screen_width = screen_info.get('width', 375)
+            screen_height = screen_info.get('height', 812)
+            user_agent = screen_info.get('userAgent', '')
+            
             # Get config from server settings
             config = get_server_config()
             vnc_file = config.get('vnc_file', 'vnc.html')
             url = config.get('url', '')
             
-            # Create or get session
-            session = manager.create_session(client_ip, vnc_file, url if url else None)
+            # Create or get session with screen dimensions
+            session = manager.create_session(
+                client_ip, 
+                vnc_file, 
+                url if url else None,
+                screen_width=screen_width,
+                screen_height=screen_height,
+                user_agent=user_agent
+            )
             
             if session:
                 host = self.headers.get('Host', 'localhost').split(':')[0]
