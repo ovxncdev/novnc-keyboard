@@ -188,7 +188,7 @@ class KeyboardAgent:
                 
                 # Only broadcast if state changed
                 if self.last_state is None or self.last_state['focused'] != is_focused:
-                    self.logger.debug(f"Focus changed: {current_state['action']}")
+                    self.logger.info(f"Focus changed: {current_state['action']}")
                     await self.broadcast(current_state)
                     self.last_state = current_state
                 
