@@ -170,11 +170,12 @@ class FocusDetector:
         
         # If AT-SPI is available, use it for precise detection
         if self.use_atspi:
-            return self._check_atspi_focus()
+            result = self._check_atspi_focus()
+            return result
         
-        # Fallback: assume text field is focused if enabled app is active
-        # (less accurate but works without accessibility API)
-        return True
+        # Fallback: return False if we can't detect precisely
+        # This prevents keyboard from showing just because Chrome is active
+        return False
     
     def _check_atspi_focus(self):
         """Use AT-SPI to check if focused element is a text input"""
@@ -183,7 +184,7 @@ class FocusDetector:
             desktop = Atspi.get_desktop(0)
             
             if desktop is None:
-                return self.is_enabled_app_active()
+                return False
             
             # Iterate through applications
             for i in range(desktop.get_child_count()):
@@ -198,14 +199,15 @@ class FocusDetector:
                 
                 # Find focused element in this app
                 focused = self._find_focused_element(app)
-                if focused and self._is_text_input(focused):
-                    return True
+                if focused:
+                    is_text = self._is_text_input(focused)
+                    return is_text
             
             return False
             
-        except Exception:
-            # Fallback to window-based detection on error
-            return self.is_enabled_app_active()
+        except Exception as e:
+            # Return False on error - don't show keyboard if unsure
+            return False
     
     def _is_enabled_app_name(self, app_name):
         """Check if app name matches enabled apps"""
@@ -348,10 +350,10 @@ def install_dependencies():
             ['sudo', 'apt', 'install', '-y'] + packages,
             check=True
         )
-        print("[!] Dependencies installed successfully!")
+        print("✅ Dependencies installed successfully!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"[X] Failed to install dependencies: {e}")
+        print(f"❌ Failed to install dependencies: {e}")
         return False
 
 
@@ -366,7 +368,7 @@ if __name__ == "__main__":
     # Check dependencies
     missing = check_dependencies()
     if missing:
-        print(f"\n[*]  Missing dependencies: {', '.join(missing)}")
+        print(f"\n⚠️  Missing dependencies: {', '.join(missing)}")
         response = input("Install them now? (y/n): ")
         if response.lower() == 'y':
             install_dependencies()
