@@ -876,25 +876,22 @@
             }
 
             sendKey(key) {
-                // Send to noVNC iframe
-                const iframe = document.getElementById('vnc-iframe');
-                if (iframe && iframe.contentWindow && iframe.contentWindow.rfb) {
-                    const rfb = iframe.contentWindow.rfb;
-                    const keysym = this.getKeysym(key);
-                    if (keysym) {
-                        rfb.sendKey(keysym, key, true);  // key down
-                        rfb.sendKey(keysym, key, false); // key up
-                    }
+                // Send special key to agent via WebSocket
+                if (window.app && window.app.ws) {
+                    window.app.ws.send({
+                        type: 'special',
+                        key: key
+                    });
                 }
             }
 
             sendChar(char) {
-                const iframe = document.getElementById('vnc-iframe');
-                if (iframe && iframe.contentWindow && iframe.contentWindow.rfb) {
-                    const rfb = iframe.contentWindow.rfb;
-                    const keysym = char.charCodeAt(0);
-                    rfb.sendKey(keysym, char, true);
-                    rfb.sendKey(keysym, char, false);
+                // Send character to agent via WebSocket
+                if (window.app && window.app.ws) {
+                    window.app.ws.send({
+                        type: 'key',
+                        key: char
+                    });
                 }
             }
 
@@ -971,6 +968,16 @@
 
                 // Set initial theme
                 this.keyboard.setTheme(this.device.theme);
+
+                // Click on VNC container hides keyboard
+                document.getElementById('vnc-container').addEventListener('click', () => {
+                    this.keyboard.hide();
+                });
+
+                // Also handle touch
+                document.getElementById('vnc-container').addEventListener('touchstart', () => {
+                    // Don't hide immediately, let the agent decide based on focus
+                }, { passive: true });
 
                 // Listen for theme changes
                 DeviceDetector.onThemeChange((theme) => {
