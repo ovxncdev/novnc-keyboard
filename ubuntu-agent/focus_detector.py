@@ -259,32 +259,49 @@ class FocusDetector:
         try:
             role = accessible.get_role()
             
-            # Text input roles
+            # Only these roles are actual text inputs
             text_roles = [
-                Atspi.Role.ENTRY,
-                Atspi.Role.TEXT,
-                Atspi.Role.PARAGRAPH,
-                Atspi.Role.TERMINAL,
-                Atspi.Role.PASSWORD_TEXT,
-                Atspi.Role.EDITBAR,
-                Atspi.Role.DOCUMENT_TEXT,
-                Atspi.Role.DOCUMENT_FRAME,
-                Atspi.Role.DOCUMENT_WEB,
+                Atspi.Role.ENTRY,           # Text entry field
+                Atspi.Role.PASSWORD_TEXT,   # Password field
+                Atspi.Role.TEXT,            # Text area
+                Atspi.Role.EDITBAR,         # Edit bar
+                Atspi.Role.TERMINAL,        # Terminal
+                Atspi.Role.SPIN_BUTTON,     # Number input
             ]
+            
+            # COMBO_BOX with editable state is also a text input
+            if role == Atspi.Role.COMBO_BOX:
+                state_set = accessible.get_state_set()
+                if state_set and state_set.contains(Atspi.StateType.EDITABLE):
+                    return True
+                # Chrome's search/URL bar combo box should trigger keyboard
+                name = accessible.get_name()
+                if name and ('search' in name.lower() or 'url' in name.lower() or 'address' in name.lower()):
+                    return True
+                return False
+            
+            # Document/web roles are NOT text inputs
+            non_text_roles = [
+                Atspi.Role.DOCUMENT_WEB,
+                Atspi.Role.DOCUMENT_FRAME,
+                Atspi.Role.FRAME,
+                Atspi.Role.PANEL,
+                Atspi.Role.SCROLL_PANE,
+                Atspi.Role.FILLER,
+                Atspi.Role.SECTION,
+            ]
+            
+            if role in non_text_roles:
+                return False
             
             if role in text_roles:
                 return True
             
-            # Check if element is editable
+            # Check if element is editable as fallback
             state_set = accessible.get_state_set()
             if state_set:
                 if state_set.contains(Atspi.StateType.EDITABLE):
                     return True
-            
-            # Check interfaces
-            interfaces = accessible.get_interfaces()
-            if 'EditableText' in interfaces:
-                return True
             
             return False
             
