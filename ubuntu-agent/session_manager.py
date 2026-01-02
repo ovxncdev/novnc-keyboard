@@ -54,6 +54,9 @@ class Session:
     created_at: str
     last_activity: str
     status: str  # active, inactive, closed
+    screen_width: int = 375
+    screen_height: int = 812
+    user_agent: str = ''
     pid_vnc: Optional[int] = None
     pid_chrome: Optional[int] = None
     pid_agent: Optional[int] = None
@@ -179,7 +182,8 @@ class SessionManager:
                     self.close_session(session_id)
         return None
     
-    def create_session(self, ip_address: str, vnc_file: str = "vnc.html", url: str = None) -> Optional[Session]:
+    def create_session(self, ip_address: str, vnc_file: str = "vnc.html", url: str = None, 
+                        screen_width: int = 375, screen_height: int = 812, user_agent: str = '') -> Optional[Session]:
         """Create a new session for IP"""
         with self.lock:
             # Check if session already exists
@@ -219,7 +223,10 @@ class SessionManager:
                 vnc_file=vnc_file,
                 created_at=now,
                 last_activity=now,
-                status='active'
+                status='active',
+                screen_width=screen_width,
+                screen_height=screen_height,
+                user_agent=user_agent
             )
             
             # Start session services
@@ -227,7 +234,7 @@ class SessionManager:
                 self.sessions[session_id] = session
                 self.ip_to_session[ip_address] = session_id
                 self.save_sessions()
-                self.logger.info(f"Created session {session_id} for {ip_address} on display :{vnc_display}")
+                self.logger.info(f"Created session {session_id} for {ip_address} on display :{vnc_display} ({screen_width}x{screen_height})")
                 return session
             else:
                 self.logger.error(f"Failed to start services for session {session_id}")
@@ -241,11 +248,15 @@ class SessionManager:
                          capture_output=True)
             time.sleep(1)
             
-            # Start VNC server with mobile-friendly resolution
+            # Use session's screen dimensions
+            width = session.screen_width
+            height = session.screen_height
+            
+            # Start VNC server with device's screen size
             vnc_cmd = [
                 'vncserver',
                 f':{session.vnc_display}',
-                '-geometry', '375x812',
+                '-geometry', f'{width}x{height}',
                 '-depth', '24',
                 '-localhost', 'no'
             ]
@@ -298,7 +309,7 @@ class SessionManager:
             
             self.logger.info(f"Websockify started on port {session.novnc_port} (PID: {session.pid_websockify})")
             
-            # 3. Start Chrome with profile
+            # 3. Start Chrome with profile and matching screen size
             chrome_profile_dir = CHROME_PROFILES_DIR / session.chrome_profile
             chrome_profile_dir.mkdir(parents=True, exist_ok=True)
             
@@ -306,6 +317,10 @@ class SessionManager:
             env['DISPLAY'] = f':{session.vnc_display}'
             env['ACCESSIBILITY_ENABLED'] = '1'
             env['GTK_MODULES'] = 'gail:atk-bridge'
+            
+            # Detect if mobile user agent
+            user_agent = session.user_agent
+            is_mobile = any(x in user_agent.lower() for x in ['iphone', 'android', 'mobile'])
             
             chrome_cmd = [
                 'google-chrome',
@@ -317,16 +332,17 @@ class SessionManager:
                 '--disable-session-crashed-bubble',
                 '--no-first-run',
                 '--kiosk',
-                # Mobile emulation
-                '--window-size=375,812',
-                '--user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-                '--force-device-scale-factor=1',
+                f'--window-size={width},{height}',
             ]
+            
+            # Add mobile user agent if connecting from mobile
+            if is_mobile:
+                chrome_cmd.append(f'--user-agent={user_agent}')
             
             if url:
                 chrome_cmd.append(url)
             
-            self.logger.info(f"Starting Chrome on display :{session.vnc_display}")
+            self.logger.info(f"Starting Chrome on display :{session.vnc_display} ({width}x{height})")
             
             chrome_process = subprocess.Popen(
                 chrome_cmd,
