@@ -231,12 +231,65 @@ ADMIN_HTML = """
                 grid-template-columns: repeat(2, 1fr);
             }
             
+            .section {
+                padding: 15px;
+                overflow-x: auto;
+            }
+            
             table {
                 font-size: 12px;
+                min-width: 600px;
             }
             
             th, td {
-                padding: 8px;
+                padding: 8px 6px;
+                white-space: nowrap;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .refresh-bar {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-card .value {
+                font-size: 28px;
+            }
+            
+            .header {
+                padding: 20px 0;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .section h2 {
+                font-size: 16px;
             }
         }
     </style>
