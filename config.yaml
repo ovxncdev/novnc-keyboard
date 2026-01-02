@@ -9,20 +9,49 @@ server:
 detection:
   poll_interval: 100  # milliseconds (100 = responsive)
   method: "accessibility"  # uses at-spi2 for text field detection
+  auto_detect: true  # fallback: auto-detect browsers not in list
 
 apps:
   chrome:
     enabled: true
-    process_name: "google-chrome"
-    window_class: "Google-chrome"
+    process_names:
+      - "google-chrome"
+      - "google-chrome-stable"
+      - "google-chrome-beta"
+      - "google-chrome-unstable"
+      - "chrome"
+    window_classes:
+      - "Google-chrome"
+      - "Google-chrome-stable"
+      - "Google-chrome-beta"
+  chromium:
+    enabled: true
+    process_names:
+      - "chromium-browser"
+      - "chromium"
+    window_classes:
+      - "Chromium-browser"
+      - "Chromium"
   firefox:
     enabled: false
-    process_name: "firefox"
-    window_class: "Firefox"
+    process_names:
+      - "firefox"
+      - "firefox-esr"
+    window_classes:
+      - "Firefox"
+      - "Firefox-esr"
   terminal:
     enabled: false
-    process_name: "gnome-terminal"
-    window_class: "Gnome-terminal"
+    process_names:
+      - "gnome-terminal"
+      - "xterm"
+      - "konsole"
+      - "terminator"
+    window_classes:
+      - "Gnome-terminal"
+      - "XTerm"
+      - "Konsole"
+      - "Terminator"
 
 keyboard:
   layout: "qwerty_us"
