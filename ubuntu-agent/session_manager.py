@@ -160,12 +160,23 @@ class SessionManager:
         return None
     
     def get_session_by_ip(self, ip_address: str) -> Optional[Session]:
-        """Get existing session for IP"""
+        """Get existing session for IP, verify it's still running"""
         session_id = self.ip_to_session.get(ip_address)
         if session_id:
             session = self.sessions.get(session_id)
             if session and session.status == 'active':
-                return session
+                # Verify VNC is still running
+                result = subprocess.run(
+                    ['pgrep', '-f', f'Xtigervnc :{session.vnc_display}'],
+                    capture_output=True,
+                    text=True
+                )
+                if result.stdout.strip():
+                    return session
+                else:
+                    # Services died, clean up this session
+                    self.logger.warning(f"Session {session_id} services not running, cleaning up")
+                    self.close_session(session_id)
         return None
     
     def create_session(self, ip_address: str, vnc_file: str = "vnc.html", url: str = None) -> Optional[Session]:
@@ -230,11 +241,11 @@ class SessionManager:
                          capture_output=True)
             time.sleep(1)
             
-            # Start VNC server
+            # Start VNC server with mobile-friendly resolution
             vnc_cmd = [
                 'vncserver',
                 f':{session.vnc_display}',
-                '-geometry', '1280x720',
+                '-geometry', '375x812',
                 '-depth', '24',
                 '-localhost', 'no'
             ]
@@ -305,7 +316,11 @@ class SessionManager:
                 '--disable-infobars',
                 '--disable-session-crashed-bubble',
                 '--no-first-run',
-                '--kiosk'
+                '--kiosk',
+                # Mobile emulation
+                '--window-size=375,812',
+                '--user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+                '--force-device-scale-factor=1',
             ]
             
             if url:
