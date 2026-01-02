@@ -596,7 +596,41 @@ def start_menu():
         elif choice == '4':
             return ('agent_only', None, vnc_file)
         elif choice == '5':
-            return ('multi_user', None, vnc_file)
+            # Multi-user mode - ask for URL
+            clear()
+            print_banner()
+            print(f"\n{C.CYAN}{C.BOLD}  Multi-User Mode - Set Target URL{C.RESET}\n")
+            
+            urls = load_urls()
+            
+            print(f"  {C.CYAN}[1]{C.RESET} Enter custom URL")
+            print(f"  {C.CYAN}[2]{C.RESET} Blank page (no URL)")
+            
+            if urls:
+                print(f"\n  {C.DIM}── Saved URLs ──{C.RESET}")
+                for i, item in enumerate(urls):
+                    print(f"  {C.CYAN}[{i + 3}]{C.RESET} {item['name']} {C.DIM}({item['url']}){C.RESET}")
+            
+            print(f"\n  {C.CYAN}[0]{C.RESET} Back")
+            
+            url_choice = get_choice()
+            
+            if url_choice == '0':
+                continue
+            elif url_choice == '1':
+                url = get_input("Enter URL")
+                if url and not url.startswith('http'):
+                    url = 'https://' + url
+                return ('multi_user', url, vnc_file)
+            elif url_choice == '2':
+                return ('multi_user', '', vnc_file)
+            else:
+                try:
+                    idx = int(url_choice) - 3
+                    if 0 <= idx < len(urls):
+                        return ('multi_user', urls[idx]['url'], vnc_file)
+                except ValueError:
+                    pass
         elif choice == '0':
             continue
         else:
@@ -700,7 +734,7 @@ def run_system(mode, url, vnc_file='vnc.html'):
         signal_handler(None, None)
 
 
-def run_multi_user_server(default_vnc_file='vnc.html'):
+def run_multi_user_server(default_vnc_file='vnc.html', url=''):
     """Run multi-user session server"""
     clear()
     print_banner()
@@ -710,11 +744,16 @@ def run_multi_user_server(default_vnc_file='vnc.html'):
     # Import session manager and admin panel
     try:
         from session_manager import get_session_manager
-        from admin_panel import AdminServer, ADMIN_PORT
+        from admin_panel import AdminServer, ADMIN_PORT, set_server_config
     except ImportError as e:
         print_error(f"Failed to import session manager: {e}")
         pause()
         return
+    
+    # Set server config (URL and VNC file)
+    set_server_config(url=url, vnc_file=default_vnc_file)
+    print(f"  {C.DIM}URL: {url if url else '(none)'}{C.RESET}")
+    print(f"  {C.DIM}VNC: {default_vnc_file}{C.RESET}\n")
     
     # Start session manager
     print(f"  {C.DIM}Starting session manager...{C.RESET}")
@@ -741,6 +780,7 @@ def run_multi_user_server(default_vnc_file='vnc.html'):
   {C.DIM}User Connect URL:{C.RESET}
   {C.WHITE}http://<your-ip>:{ADMIN_PORT}/connect{C.RESET}
   
+  {C.DIM}Target URL:{C.RESET} {C.WHITE}{url if url else '(blank page)'}{C.RESET}
   {C.DIM}Max concurrent users:{C.RESET} {C.WHITE}{stats['max_sessions']}{C.RESET}
   {C.DIM}Session timeout:{C.RESET} {C.WHITE}{stats['timeout_minutes']} minutes{C.RESET}
   {C.DIM}Port range:{C.RESET} {C.WHITE}{stats['port_range']}{C.RESET}
