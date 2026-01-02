@@ -104,9 +104,8 @@ class KeyboardAgent:
         client_ip = websocket.remote_address[0] if websocket.remote_address else 'unknown'
         self.logger.info(f"Client connected: {client_ip} (total: {len(self.clients)})")
         
-        # Send current state to new client
-        if self.last_state is not None:
-            await self.send_to_client(websocket, self.last_state)
+        # Always send hide_keyboard initially - keyboard should start hidden
+        await self.send_to_client(websocket, {'action': 'hide_keyboard', 'focused': False})
     
     async def unregister(self, websocket):
         """Unregister a client connection"""
