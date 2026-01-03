@@ -252,12 +252,12 @@ class SessionManager:
             width = session.screen_width
             height = session.screen_height
             
-            # Start VNC server with device's screen size
+            # Start VNC server with device's screen size and high quality
             vnc_cmd = [
                 'vncserver',
                 f':{session.vnc_display}',
                 '-geometry', f'{width}x{height}',
-                '-depth', '24',
+                '-depth', '32',
                 '-localhost', 'no'
             ]
             
@@ -333,6 +333,7 @@ class SessionManager:
                 '--no-first-run',
                 '--kiosk',
                 f'--window-size={width},{height}',
+                '--force-device-scale-factor=0.75',  # 75% zoom
             ]
             
             # Add mobile user agent if connecting from mobile
