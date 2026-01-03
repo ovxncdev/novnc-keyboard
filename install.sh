@@ -50,8 +50,8 @@ sudo systemctl enable novnc-keyboard
 
 # Set permissions
 echo "[5/5] Setting permissions..."
-chmod +x "$SCRIPT_DIR/launcher.py"
-chmod +x "$SCRIPT_DIR/start_server.py"
+chmod +x "$SCRIPT_DIR/ubuntu-agent/launcher.py" 2>/dev/null || true
+chmod +x "$SCRIPT_DIR/ubuntu-agent/start_server.py" 2>/dev/null || true
 
 echo ""
 echo "╔═══════════════════════════════════════════════════════╗"
@@ -65,5 +65,5 @@ echo ""
 echo "Or use systemd:"
 echo "  sudo systemctl start novnc-keyboard"
 echo ""
-echo "Required ports: 6080-6090, 6101-6110"
+echo "Required AWS ports: 6080-6090, 6101-6110"
 echo ""
