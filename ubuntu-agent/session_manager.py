@@ -345,6 +345,14 @@ class SessionManager:
             
             self.logger.info(f"Starting Chrome on display :{session.vnc_display} ({width}x{height})")
             
+            # Hide cursor on this display using unclutter or xdotool
+            subprocess.Popen(
+                ['unclutter', '-idle', '0', '-root'],
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            
             chrome_process = subprocess.Popen(
                 chrome_cmd,
                 env=env,
