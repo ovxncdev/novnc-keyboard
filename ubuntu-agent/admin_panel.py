@@ -690,14 +690,18 @@ ROUTER_HTML = """
 </head>
 <body class="theme-generic">
     <div class="loader" id="loader">
-        <!-- Gmail Logo SVG -->
-        <svg class="gmail-logo hidden" viewBox="0 0 74 74" xmlns="http://www.w3.org/2000/svg">
-            <path d="M37 74C57.4345 74 74 57.4345 74 37C74 16.5655 57.4345 0 37 0C16.5655 0 0 16.5655 0 37C0 57.4345 16.5655 74 37 74Z" fill="#F2F2F2"/>
-            <path d="M20.5 23H53.5C55.15 23 56.5 24.35 56.5 26V48C56.5 49.65 55.15 51 53.5 51H20.5C18.85 51 17.5 49.65 17.5 48V26C17.5 24.35 18.85 23 20.5 23Z" fill="#EA4335"/>
-            <path d="M56.5 26L37 39L17.5 26V48C17.5 49.65 18.85 51 20.5 51H53.5C55.15 51 56.5 49.65 56.5 48V26Z" fill="#FBBC05"/>
-            <path d="M17.5 26L37 39L56.5 26V48L37 35L17.5 48V26Z" fill="#34A853"/>
-            <path d="M17.5 26V28L37 41L56.5 28V26C56.5 24.35 55.15 23 53.5 23H20.5C18.85 23 17.5 24.35 17.5 26Z" fill="#C5221F"/>
-            <path d="M53.5 23H51V48C51 49.65 52.35 51 54 51H53.5C55.15 51 56.5 49.65 56.5 48V26C56.5 24.35 55.15 23 53.5 23Z" fill="#1A73E8"/>
+        <!-- Gmail Logo SVG - Real Gmail Logo -->
+        <svg class="gmail-logo hidden" viewBox="0 0 75 75" xmlns="http://www.w3.org/2000/svg">
+            <rect width="75" height="75" rx="15" fill="#fff"/>
+            <path d="M63.5 17H11.5C9.01 17 7 19.01 7 21.5V53.5C7 55.99 9.01 58 11.5 58H63.5C65.99 58 68 55.99 68 53.5V21.5C68 19.01 65.99 17 63.5 17Z" fill="#F1F3F4"/>
+            <path d="M11 21L37.5 40L64 21" stroke="#EA4335" stroke-width="4" fill="none"/>
+            <path d="M11 21V54H20V31L37.5 44L55 31V54H64V21L37.5 40L11 21Z" fill="#EA4335"/>
+            <path d="M11 54V31L37.5 50L64 31V54H11Z" fill="#C5221F"/>
+            <path d="M11 21L37.5 40L64 21V31L37.5 50L11 31V21Z" fill="#EA4335"/>
+            <rect x="11" y="21" width="9" height="33" fill="#F1F3F4"/>
+            <rect x="55" y="21" width="9" height="33" fill="#F1F3F4"/>
+            <path d="M11 54L20 45V54H11Z" fill="#C5221F"/>
+            <path d="M64 54L55 45V54H64Z" fill="#C5221F"/>
         </svg>
 
         <!-- Gmail Spinner -->
@@ -907,7 +911,7 @@ KEYBOARD_WRAPPER_HTML = """
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Session</title>
@@ -922,12 +926,13 @@ KEYBOARD_WRAPPER_HTML = """
             height: 100%; 
             overflow: hidden; 
             background: #000;
-            touch-action: manipulation;
         }
         #vnc-container {
             width: 100%;
             height: 100%;
             position: relative;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
         }
         #vnc-iframe { 
             width: 100%; 
@@ -936,65 +941,10 @@ KEYBOARD_WRAPPER_HTML = """
             position: absolute;
             top: 0;
             left: 0;
+            transform-origin: top left;
+            transform: scale(0.9);
         }
-    </style>
-</head>
-<body>
-    <div id="vnc-container">
-        <iframe id="vnc-iframe" src="SESSION_VNC_URL" allow="fullscreen"></iframe>
-    </div>
-
-    <script>
-        const SESSION_ID = 'SESSION_ID_PLACEHOLDER';
-        const AGENT_PORT = AGENT_PORT_PLACEHOLDER;
-        const AGENT_WS = 'ws://' + window.location.hostname + ':' + AGENT_PORT;
-        
-        // Activity tracking - ping every 30 seconds
-        setInterval(() => {
-            fetch('/api/activity/' + SESSION_ID, { method: 'POST' }).catch(() => {});
-        }, 30000);
-        
-        // Connect to keyboard agent WebSocket
-        let ws = null;
-        let keyboardVisible = false;
-        
-        function connectAgent() {
-            ws = new WebSocket(AGENT_WS);
-            
-            ws.onopen = () => {
-                console.log('Agent connected');
-            };
-            
-            ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.action === 'show_keyboard') {
-                        showKeyboard();
-                    } else if (data.action === 'hide_keyboard') {
-                        hideKeyboard();
-                    }
-                } catch(e) {}
-            };
-            
-            ws.onclose = () => {
-                console.log('Agent disconnected, reconnecting...');
-                setTimeout(connectAgent, 3000);
-            };
-            
-            ws.onerror = () => {
-                ws.close();
-            };
-        }
-        
-        function sendKey(type, key) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: type, key: key }));
-            }
-        }
-        
-        // Keyboard UI
-        const keyboardHTML = `
-        <div id="keyboard-overlay" style="
+        #keyboard-overlay {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -1005,11 +955,94 @@ KEYBOARD_WRAPPER_HTML = """
             z-index: 9999;
             padding: 5px;
             padding-bottom: max(5px, env(safe-area-inset-bottom));
-        ">
-            <div id="kb-rows"></div>
-        </div>
-        `;
+        }
+        #keyboard-overlay.visible {
+            transform: translateY(0);
+        }
+        .kb-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 6px;
+        }
+        .kb-key {
+            height: 42px;
+            margin: 0 2px;
+            border: none;
+            border-radius: 5px;
+            background: #fff;
+            color: #000;
+            font-size: 22px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.35);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .kb-key.special {
+            background: #adb3bc;
+            font-size: 14px;
+        }
+        .kb-key.return {
+            background: #007aff;
+            color: #fff;
+            font-size: 14px;
+        }
+        .kb-key.shift-active {
+            background: #fff;
+        }
+        .kb-key:active {
+            transform: scale(0.95);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div id="vnc-container">
+        <iframe id="vnc-iframe" src="SESSION_VNC_URL" allow="fullscreen"></iframe>
+    </div>
+    
+    <div id="keyboard-overlay">
+        <div id="kb-rows"></div>
+    </div>
+
+    <script>
+        const SESSION_ID = 'SESSION_ID_PLACEHOLDER';
+        const AGENT_PORT = AGENT_PORT_PLACEHOLDER;
+        const AGENT_WS = 'ws://' + window.location.hostname + ':' + AGENT_PORT;
         
+        // Activity tracking
+        setInterval(() => {
+            fetch('/api/activity/' + SESSION_ID, { method: 'POST' }).catch(() => {});
+        }, 30000);
+        
+        // WebSocket connection
+        let ws = null;
+        
+        function connectAgent() {
+            ws = new WebSocket(AGENT_WS);
+            
+            ws.onopen = () => console.log('Agent connected');
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.action === 'show_keyboard') {
+                        document.getElementById('keyboard-overlay').classList.add('visible');
+                    } else if (data.action === 'hide_keyboard') {
+                        document.getElementById('keyboard-overlay').classList.remove('visible');
+                    }
+                } catch(e) {}
+            };
+            
+            ws.onclose = () => setTimeout(connectAgent, 3000);
+            ws.onerror = () => ws.close();
+        }
+        
+        function sendKey(type, key) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type, key }));
+            }
+        }
+        
+        // Keyboard
         const layouts = {
             letters: [
                 ['q','w','e','r','t','y','u','i','o','p'],
@@ -1029,59 +1062,67 @@ KEYBOARD_WRAPPER_HTML = """
         let isShift = false;
         let isCaps = false;
         
-        function createKeyboard() {
-            document.body.insertAdjacentHTML('beforeend', keyboardHTML);
-            renderKeys();
-        }
-        
         function renderKeys() {
             const rows = document.getElementById('kb-rows');
             const layout = layouts[currentLayout];
             
-            rows.innerHTML = layout.map((row, ri) => {
-                return '<div style="display:flex;justify-content:center;margin-bottom:6px;">' +
-                    row.map(key => {
-                        let display = key;
-                        let width = 'calc((100% - 50px) / 10)';
-                        let bg = '#fff';
-                        
-                        if (key === 'shift') { display = '⇧'; width = '42px'; bg = isShift || isCaps ? '#fff' : '#adb3bc'; }
-                        else if (key === '⌫') { width = '42px'; bg = '#adb3bc'; }
-                        else if (key === '123' || key === 'ABC' || key === '#+=') { width = '42px'; bg = '#adb3bc'; }
-                        else if (key === '🌐') { width = '38px'; bg = '#adb3bc'; }
-                        else if (key === 'space') { display = 'space'; width = 'calc(100% - 200px)'; }
-                        else if (key === 'return') { display = 'return'; width = '80px'; bg = '#007aff'; }
-                        else if (ri === 1 && currentLayout === 'letters') { width = 'calc((100% - 40px) / 9)'; }
-                        else if (ri === 2 && currentLayout === 'letters' && key.length === 1) { width = 'calc((100% - 100px) / 7)'; }
-                        
-                        if ((isShift || isCaps) && key.length === 1 && /[a-z]/.test(key)) {
-                            display = key.toUpperCase();
-                        }
-                        
-                        const color = key === 'return' ? '#fff' : '#000';
-                        
-                        return '<button data-key="' + key + '" style="' +
-                            'width:' + width + ';height:42px;margin:0 2px;border:none;border-radius:5px;' +
-                            'background:' + bg + ';color:' + color + ';font-size:' + (key.length > 1 ? '14px' : '22px') + ';' +
-                            'box-shadow:0 1px 0 rgba(0,0,0,0.35);-webkit-tap-highlight-color:transparent;' +
-                        '">' + display + '</button>';
-                    }).join('') +
-                '</div>';
-            }).join('');
+            rows.innerHTML = '';
             
-            // Add event listeners
-            rows.querySelectorAll('button').forEach(btn => {
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    btn.style.transform = 'scale(0.95)';
-                    btn.style.opacity = '0.7';
+            layout.forEach((row, ri) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'kb-row';
+                
+                row.forEach(key => {
+                    const btn = document.createElement('button');
+                    btn.className = 'kb-key';
+                    btn.dataset.key = key;
+                    
+                    let display = key;
+                    let width = 'calc((100% - 50px) / 10)';
+                    
+                    if (key === 'shift') {
+                        display = '⇧';
+                        width = '42px';
+                        btn.classList.add('special');
+                        if (isShift || isCaps) btn.classList.add('shift-active');
+                    } else if (key === '⌫') {
+                        width = '42px';
+                        btn.classList.add('special');
+                    } else if (key === '123' || key === 'ABC' || key === '#+=') {
+                        width = '42px';
+                        btn.classList.add('special');
+                    } else if (key === '🌐') {
+                        width = '38px';
+                        btn.classList.add('special');
+                    } else if (key === 'space') {
+                        display = 'space';
+                        width = 'calc(100% - 200px)';
+                    } else if (key === 'return') {
+                        display = 'return';
+                        width = '80px';
+                        btn.classList.add('return');
+                    } else if (ri === 1 && currentLayout === 'letters') {
+                        width = 'calc((100% - 40px) / 9)';
+                    } else if (ri === 2 && currentLayout === 'letters' && key.length === 1) {
+                        width = 'calc((100% - 100px) / 7)';
+                    }
+                    
+                    if ((isShift || isCaps) && key.length === 1 && /[a-z]/.test(key)) {
+                        display = key.toUpperCase();
+                    }
+                    
+                    btn.style.width = width;
+                    btn.textContent = display;
+                    
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        handleKey(key);
+                    });
+                    
+                    rowDiv.appendChild(btn);
                 });
-                btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    btn.style.transform = '';
-                    btn.style.opacity = '';
-                    handleKey(btn.dataset.key);
-                });
+                
+                rows.appendChild(rowDiv);
             });
         }
         
@@ -1097,17 +1138,13 @@ KEYBOARD_WRAPPER_HTML = """
             } else if (key === 'ABC') {
                 currentLayout = 'letters';
                 renderKeys();
-            } else if (key === '#+=') {
-                // Could add symbols layout
-            } else if (key === '🌐') {
-                // Language switch
             } else if (key === 'space') {
                 sendKey('special', 'space');
             } else if (key === 'return') {
                 sendKey('special', 'Return');
             } else if (key === '⌫') {
                 sendKey('special', 'BackSpace');
-            } else {
+            } else if (key !== '🌐' && key !== '#+=') {
                 let char = key;
                 if ((isShift || isCaps) && /[a-z]/.test(key)) {
                     char = key.toUpperCase();
@@ -1120,30 +1157,9 @@ KEYBOARD_WRAPPER_HTML = """
             }
         }
         
-        function showKeyboard() {
-            const kb = document.getElementById('keyboard-overlay');
-            if (kb) {
-                kb.style.transform = 'translateY(0)';
-                keyboardVisible = true;
-            }
-        }
-        
-        function hideKeyboard() {
-            const kb = document.getElementById('keyboard-overlay');
-            if (kb) {
-                kb.style.transform = 'translateY(100%)';
-                keyboardVisible = false;
-            }
-        }
-        
-        // Initialize
-        createKeyboard();
+        // Init
+        renderKeys();
         connectAgent();
-        
-        // Hide keyboard when tapping on VNC
-        document.getElementById('vnc-container').addEventListener('click', () => {
-            // Let agent decide based on focus
-        });
     </script>
 </body>
 </html>
