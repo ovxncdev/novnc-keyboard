@@ -932,6 +932,7 @@ KEYBOARD_WRAPPER_HTML = """
             height: 100%; 
             border: none;
             display: block;
+            cursor: none;
         }
         #keyboard-overlay {
             position: fixed;
