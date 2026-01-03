@@ -246,7 +246,7 @@ class SessionManager:
             # 1. Kill existing VNC on this display first
             subprocess.run(['vncserver', '-kill', f':{session.vnc_display}'], 
                          capture_output=True)
-            time.sleep(1)
+            time.sleep(0.5)
             
             # Use session's screen dimensions
             width = session.screen_width
@@ -267,14 +267,14 @@ class SessionManager:
                 vnc_cmd,
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=15
             )
             
             if vnc_result.returncode != 0:
                 self.logger.error(f"VNC failed: {vnc_result.stderr}")
                 return False
             
-            time.sleep(2)
+            time.sleep(1)
             
             # Verify VNC is running
             result = subprocess.run(
@@ -305,7 +305,7 @@ class SessionManager:
                 stderr=subprocess.DEVNULL
             )
             session.pid_websockify = websockify_process.pid
-            time.sleep(1)
+            time.sleep(0.5)
             
             self.logger.info(f"Websockify started on port {session.novnc_port} (PID: {session.pid_websockify})")
             
@@ -351,7 +351,7 @@ class SessionManager:
                 stderr=subprocess.DEVNULL
             )
             session.pid_chrome = chrome_process.pid
-            time.sleep(2)
+            time.sleep(1)
             
             self.logger.info(f"Chrome started (PID: {session.pid_chrome})")
             
