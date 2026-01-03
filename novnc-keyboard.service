@@ -1,0 +1,16 @@
+[Unit]
+Description=noVNC Keyboard Multi-User Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/novnc-keyboard/ubuntu-agent
+ExecStart=/usr/bin/python3 /home/ubuntu/novnc-keyboard/ubuntu-agent/start_server.py --url "https://gmail.com" --vnc "vnc_lite.html"
+Restart=always
+RestartSec=5
+Environment=DISPLAY=:1
+Environment=HOME=/home/ubuntu
+
+[Install]
+WantedBy=multi-user.target
