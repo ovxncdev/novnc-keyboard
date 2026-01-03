@@ -197,18 +197,24 @@ def manage_urls():
 
 def load_config():
     """Load YAML config"""
-    import yaml
-    if CONFIG_FILE.exists():
-        with open(CONFIG_FILE, 'r') as f:
-            return yaml.safe_load(f)
+    try:
+        import yaml
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE, 'r') as f:
+                return yaml.safe_load(f)
+    except ImportError:
+        pass
     return get_default_config()
 
 def save_config(config):
     """Save YAML config"""
-    import yaml
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(CONFIG_FILE, 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
+    try:
+        import yaml
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(CONFIG_FILE, 'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
+    except ImportError:
+        pass
 
 def get_default_config():
     return {
@@ -456,16 +462,17 @@ def setup_config():
 def create_systemd_service():
     """Create systemd service file"""
     service_content = f"""[Unit]
-Description=noVNC Keyboard Agent
+Description=noVNC Keyboard Multi-User Server
 After=network.target
 
 [Service]
 Type=simple
 User={os.environ.get('USER', 'ubuntu')}
-Environment=DISPLAY=:1.0
-ExecStart=/usr/bin/python3 {SCRIPT_DIR}/agent.py
-Restart=on-failure
+WorkingDirectory={SCRIPT_DIR}
+ExecStart=/usr/bin/python3 {SCRIPT_DIR}/start_server.py --url "https://gmail.com" --vnc "vnc_lite.html"
+Restart=always
 RestartSec=5
+Environment=HOME=/home/{os.environ.get('USER', 'ubuntu')}
 
 [Install]
 WantedBy=multi-user.target
@@ -531,6 +538,27 @@ def run_installation():
     pause()
 
 # ============================================
+# CLEANUP FUNCTION
+# ============================================
+
+def kill_all_services():
+    """Kill all running services"""
+    subprocess.run(['sudo', 'fuser', '-k', '6080/tcp'], capture_output=True)
+    subprocess.run(['sudo', 'fuser', '-k', '6081/tcp'], capture_output=True)
+    subprocess.run(['sudo', 'fuser', '-k', '6082/tcp'], capture_output=True)
+    subprocess.run(['pkill', '-f', 'websockify'], capture_output=True)
+    subprocess.run(['pkill', '-f', 'chrome'], capture_output=True)
+    subprocess.run(['pkill', '-f', 'python3.*agent'], capture_output=True)
+    subprocess.run(['pkill', 'unclutter'], capture_output=True)
+    for i in range(1, 11):
+        subprocess.run(['vncserver', '-kill', f':{i}'], capture_output=True)
+    
+    # Clear sessions
+    sessions_file = CONFIG_DIR / 'sessions.json'
+    if sessions_file.exists():
+        sessions_file.unlink()
+
+# ============================================
 # MAIN MENU
 # ============================================
 
@@ -545,7 +573,7 @@ def start_menu():
         # First, choose VNC file
         print_menu("Select VNC Interface", [
             ('1', 'vnc.html (Full featured)'),
-            ('2', 'vnc_lite.html (Lightweight)'),
+            ('2', 'vnc_lite.html (Lightweight - Recommended)'),
             ('0', 'Back')
         ])
         
@@ -558,7 +586,7 @@ def start_menu():
         elif vnc_choice == '2':
             vnc_file = 'vnc_lite.html'
         else:
-            vnc_file = 'vnc.html'
+            vnc_file = 'vnc_lite.html'
         
         clear()
         print_banner()
@@ -641,14 +669,14 @@ def start_menu():
             except ValueError:
                 pass
 
-def run_system(mode, url, vnc_file='vnc.html'):
+def run_system(mode, url, vnc_file='vnc_lite.html'):
     """Run Chrome and Agent"""
     clear()
     print_banner()
     
     # Multi-user mode
     if mode == 'multi_user':
-        run_multi_user_server(vnc_file)
+        run_multi_user_server(vnc_file, url)
         return
     
     chrome_process = None
@@ -734,12 +762,18 @@ def run_system(mode, url, vnc_file='vnc.html'):
         signal_handler(None, None)
 
 
-def run_multi_user_server(default_vnc_file='vnc.html', url=''):
+def run_multi_user_server(default_vnc_file='vnc_lite.html', url=''):
     """Run multi-user session server"""
     clear()
     print_banner()
     
     print(f"\n{C.CYAN}{C.BOLD}  Starting Multi-User Server{C.RESET}\n")
+    
+    # Clean up first
+    print(f"  {C.DIM}Cleaning up old processes...{C.RESET}")
+    kill_all_services()
+    time.sleep(1)
+    print(f"  {C.GREEN}✓{C.RESET} Cleanup done")
     
     # Import session manager and admin panel
     try:
@@ -832,10 +866,29 @@ def status_menu():
     service_active = service_result.stdout.strip() == 'active'
     print(f"  Service:  {C.GREEN}● Active{C.RESET}" if service_active else f"  Service:  {C.DIM}○ Inactive{C.RESET}")
     
+    # Check sessions
+    sessions_file = CONFIG_DIR / 'sessions.json'
+    session_count = 0
+    if sessions_file.exists():
+        try:
+            with open(sessions_file) as f:
+                data = json.load(f)
+                session_count = len([s for s in data.get('sessions', []) if s.get('status') == 'active'])
+        except:
+            pass
+    print(f"  Sessions: {C.WHITE}{session_count}{C.RESET}")
+    
     # Config info
     config = load_config()
     print(f"\n  {C.DIM}Port: {config['server']['port']}{C.RESET}")
     print(f"  {C.DIM}Config: {CONFIG_FILE}{C.RESET}")
+    
+    # Port status
+    print(f"\n  {C.DIM}Port Status:{C.RESET}")
+    for port in [6080, 6081, 6082, 6101, 6102]:
+        result = subprocess.run(['sudo', 'fuser', f'{port}/tcp'], capture_output=True, text=True)
+        status = f"{C.GREEN}●{C.RESET}" if result.stdout.strip() else f"{C.DIM}○{C.RESET}"
+        print(f"    {port}: {status}")
     
     pause()
 
@@ -851,6 +904,7 @@ def main_menu():
             ('3', 'Manage URLs'),
             ('4', 'Settings'),
             ('5', 'Run Installation'),
+            ('6', f'{C.RED}Stop All Services{C.RESET}'),
             ('0', 'Exit')
         ])
         
@@ -869,6 +923,13 @@ def main_menu():
             settings_menu()
         elif choice == '5':
             run_installation()
+        elif choice == '6':
+            clear()
+            print_banner()
+            print(f"\n{C.YELLOW}Stopping all services...{C.RESET}\n")
+            kill_all_services()
+            print_success("All services stopped")
+            pause()
         elif choice == '0':
             clear()
             print(f"\n  {C.CYAN}Goodbye!{C.RESET}\n")
@@ -888,6 +949,12 @@ if __name__ == "__main__":
             run_system('kiosk', url)
         elif sys.argv[1] == '--agent':
             run_system('agent_only', None)
+        elif sys.argv[1] == '--multi':
+            url = sys.argv[2] if len(sys.argv) > 2 else ''
+            run_multi_user_server('vnc_lite.html', url)
+        elif sys.argv[1] == '--stop':
+            kill_all_services()
+            print("All services stopped")
         elif sys.argv[1] == '--help':
             print(f"""
 {C.CYAN}noVNC Keyboard System{C.RESET}
@@ -895,10 +962,12 @@ if __name__ == "__main__":
 Usage: {sys.argv[0]} [option]
 
 Options:
-  --install     Run installation
-  --start [url] Start system with optional URL
-  --agent       Start agent only (no Chrome)
-  --help        Show this help
+  --install       Run installation
+  --start [url]   Start system with optional URL
+  --agent         Start agent only (no Chrome)
+  --multi [url]   Start multi-user server
+  --stop          Stop all services
+  --help          Show this help
 
 Without options, starts interactive menu.
 """)
