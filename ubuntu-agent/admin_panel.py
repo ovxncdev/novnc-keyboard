@@ -911,7 +911,7 @@ KEYBOARD_WRAPPER_HTML = """
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Session</title>
@@ -925,24 +925,13 @@ KEYBOARD_WRAPPER_HTML = """
             width: 100%; 
             height: 100%; 
             overflow: hidden; 
-            background: #000;
-        }
-        #vnc-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            overflow: auto;
-            -webkit-overflow-scrolling: touch;
+            background: #fff;
         }
         #vnc-iframe { 
             width: 100%; 
             height: 100%; 
             border: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            transform-origin: top left;
-            transform: scale(0.9);
+            display: block;
         }
         #keyboard-overlay {
             position: fixed;
@@ -995,9 +984,7 @@ KEYBOARD_WRAPPER_HTML = """
     </style>
 </head>
 <body>
-    <div id="vnc-container">
-        <iframe id="vnc-iframe" src="SESSION_VNC_URL" allow="fullscreen"></iframe>
-    </div>
+    <iframe id="vnc-iframe" src="SESSION_VNC_URL" allow="fullscreen"></iframe>
     
     <div id="keyboard-overlay">
         <div id="kb-rows"></div>
