@@ -1266,7 +1266,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 session = manager.sessions[session_id]
                 # Generate keyboard page for this session
                 html = KEYBOARD_WRAPPER_HTML
-                vnc_url = f"http://{self.headers.get('Host').split(':')[0]}:{session.novnc_port}/{session.vnc_file}"
+                # Add quality params to VNC URL
+                vnc_url = f"http://{self.headers.get('Host').split(':')[0]}:{session.novnc_port}/{session.vnc_file}?quality=9&compression=0&resize=scale&autoconnect=true"
                 html = html.replace('SESSION_VNC_URL', vnc_url)
                 html = html.replace('SESSION_ID_PLACEHOLDER', session_id)
                 html = html.replace('AGENT_PORT_PLACEHOLDER', str(session.agent_port))
